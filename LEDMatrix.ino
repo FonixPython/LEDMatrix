@@ -11,10 +11,43 @@ byte effectMode = 0;
 int nextFrameDelay = 100;
 char animationBuffer[MAX_FRAMES][NUM_LEDS];
 int animationFrameCount = 0;
+bool animationIsPlaying = false;
+int animationCurrentFrame = 0;
 
 void setup() {
     Serial.begin(9600);
     FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+}
+
+void convertAnimationFrameBuffer(int frameIndex){
+    for (int i = 0; i<NUM_LEDS; i++){
+        switch (animationBuffer[frameIndex][i]){
+            case '0':
+                leds[i] = CRGB(0,0,0);
+                break;
+            case '1':
+                leds[i] = CRGB(255,0,0);
+                break;
+            case '2':
+                leds[i] = CRGB(0,255,0);
+                break;
+            case '3':
+                leds[i] = CRGB(0,0,255);
+                break;
+            case '4':
+                leds[i] = CRGB(255,255,0);
+                break;
+            case '5':
+                leds[i] = CRGB(255,0,255);
+                break;
+            case '6':
+                leds[i] = CRGB(0,255,255);
+                break;
+            case '7':
+                leds[i] = CRGB(255,255,255);
+                break;
+        }
+    }
 }
 
 void parseSerialInput(){
@@ -36,8 +69,6 @@ void parseSerialInput(){
     if (!cmd) return;
     switch (cmd[0]){
         case 's':
-            leds[0] = CRGB(255,0,0);
-            FastLED.show();
             switch (cmd[1]){
                 case 'm':
                     displayMode = ia;
@@ -84,6 +115,9 @@ void parseSerialInput(){
                 case 'w':
                     nextFrameDelay = ia;
                     break;
+                case 'p':
+                    animationIsPlaying = !animationIsPlaying;
+                    break;
             }
             break;
         case 'd':
@@ -95,5 +129,14 @@ void parseSerialInput(){
 void loop() {
     if (Serial.available()) {
         parseSerialInput();
+    }
+    if (animationIsPlaying && displayMode == 2){
+        convertAnimationFrameBuffer(animationCurrentFrame);
+        FastLED.show();
+        delay(nextFrameDelay);
+        animationCurrentFrame++;
+        if (animationCurrentFrame >= animationFrameCount) {
+            animationCurrentFrame = 0;
+        }
     }
 }
