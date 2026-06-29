@@ -21,6 +21,6 @@ e
 	s ~: Speed in miliseconds
 a: Only supports 8 color mode
 	s ~: This defines the number of frames in the sequence maximum 10
-	f ~ ~{Number of pixels}: Sets a frames buffer indexed from 0
+	f ~ a b c ~{Number of pixels}: Sets a frames buffer indexed from 0
 	w ~: Sets delay between frames
 d: Displays the current buffer(doesn't apply to animated effects)
