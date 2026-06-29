@@ -4,6 +4,9 @@
 #define NUM_LEDS 84
 #define MAX_FRAMES 10
 
+#define X 7
+#define Y 12
+
 CRGB leds[NUM_LEDS];
 
 byte displayMode = 0;
@@ -17,7 +20,32 @@ int animationCurrentFrame = 0;
 void setup() {
     Serial.begin(9600);
     FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+    playBootAnimation();
 }
+
+void playBootAnimation() {
+    for (int i = 0; i < NUM_LEDS; i++) {
+        fadeToBlackBy(leds, NUM_LEDS, 40);
+        leds[i] = CRGB(0, 255, 0);
+        FastLED.show();
+        delay(15);
+    }
+
+    for (int i = 0; i < 20; i++) {
+        fadeToBlackBy(leds, NUM_LEDS, 50);
+        FastLED.show();
+        delay(20);
+    }
+
+    fill_solid(leds, NUM_LEDS, CRGB(0, 255, 0));
+    FastLED.show();
+    delay(500);
+
+    fill_solid(leds, NUM_LEDS, CRGB(0, 0, 0));
+    FastLED.show();
+    delay(300);
+}
+
 
 void convertAnimationFrameBuffer(int frameIndex){
     for (int i = 0; i<NUM_LEDS; i++){
@@ -50,6 +78,20 @@ void convertAnimationFrameBuffer(int frameIndex){
     }
 }
 
+
+int coordinatesToLedAddress(int x, int y){
+    x++;y++;
+    int address = X*y;
+    if ((y%2)==0){address -=x;}
+    else {address-=X-x+1;}
+    return address;
+}
+
+
+void generateNextEffectFrame(){
+
+}
+
 void parseSerialInput(){
     String input = Serial.readStringUntil('\n');
     char buf[120];
@@ -60,11 +102,13 @@ void parseSerialInput(){
     char* b   = strtok(NULL, " ");
     char* c   = strtok(NULL, " ");
     char* d   = strtok(NULL, " ");
+    char* e   = strtok(NULL, " ");
 
     int ia = a ? atoi(a) : 0;
     int ib = b ? atoi(b) : 0;
     int ic = c ? atoi(c) : 0;
     int id = d ? atoi(d) : 0;
+    int ie = e ? atoi(e) : 0;
 
     if (!cmd) return;
     switch (cmd[0]){
@@ -89,9 +133,13 @@ void parseSerialInput(){
         case 'f':
             fill_solid(leds, NUM_LEDS, CRGB(ia,ib,ic));
             break;
-        case 'o':
-            leds[ia] = CRGB(ib,ic,id);
+        case 'o':{
+            if (ia >= 0 && ia < X && ib >= 0 && ib < Y) {
+                int address = coordinatesToLedAddress(ia,ib);
+                leds[address] = CRGB(ic,id,ie);
+            }
             break;
+        }
         case 'e':
             switch (cmd[1]){
                 case 'm':

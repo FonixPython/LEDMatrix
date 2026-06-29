@@ -9,7 +9,7 @@ s
 	b ~: Set brightness of the led strip
 		0-255
 f: ~ ~ ~, depending on bit depth
-o: ~(address of led) ~ ~ ~ (depending on bit depth)
+o: ~{x} ~{y} ~ ~ ~ (depending on bit depth)
 e
 	m ~: Set the mode
 		0: Rainbow
