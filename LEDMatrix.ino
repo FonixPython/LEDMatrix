@@ -2,11 +2,11 @@
 #include <FastLED.h>
 
 #define LED_PIN 13
-#define MAX_FRAMES 10
+#define MAX_FRAMES 20
 
 #define X 7
 #define Y 12
-#define NUM_LEDS 84
+#define NUM_LEDS (X*Y)
 
 
 
@@ -23,7 +23,7 @@ int rainbowStartingHue = 0;
 char text[64];
 uint8_t animationBuffer[MAX_FRAMES][NUM_LEDS/2];
 int animationFrameCount = 0;
-CRGB effectColor = CRGB(0,0,0);
+CRGB effectColor = CRGB(255,128,64);
 int textColor = 0;
 
 
@@ -584,7 +584,7 @@ void renderTextFrame(){
 
 void loop() {
     if (Serial.available()) {
-        parseSerialInput();
+        parseSerialInputx)();
     }
     if (animationIsPlaying && displayMode == 2){
         convertAnimationFrameBuffer(animationCurrentFrame);
