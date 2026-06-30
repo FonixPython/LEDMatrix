@@ -28,3 +28,6 @@ a: Only supports 8 color mode
 d: Displays the current buffer(doesn't apply to animated effects)
 t
 	s ~: Set text use "_" for spaces
+	c ~:
+		0: Solid color from effect color
+		1: Rainbow color mode

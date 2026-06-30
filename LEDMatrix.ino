@@ -22,7 +22,7 @@ CRGB effectColor = CRGB(0,0,0);
 int rainbowStartingHue = 0;
 int textXOffset = 0;
 String text = "HELLO_WORLD";
-
+int textColor = 0;
 
 const byte fontArray[][7] = {
   // A
@@ -522,6 +522,9 @@ void parseSerialInput(){
                 case 's':
                     text = a;
                     break;
+                case 'c':
+                    textColor = ia;
+
             }
         case 'd':
             if(displayMode==0){FastLED.show();}
@@ -551,7 +554,12 @@ void renderTextFrame(){
         for (int y = 0; y < 5 + topPadding; y++){
             bool on = currentChar[y] & (1 << (4 - charColumn));
             if (on){
-                leds[coordinatesToLedAddress(x,y+topPadding)] = effectColor;
+                if (textColor == 0){
+                    leds[coordinatesToLedAddress(x,y+topPadding)] = effectColor;
+                }
+                if (textColor == 1){
+                    leds[coordinatesToLedAddress(x,y+topPadding)] = CHSV(rainbowStartingHue + ((x+y)*10), 255, 255);
+                }
             }
         } // Render column
     }
@@ -578,6 +586,7 @@ void loop() {
         renderTextFrame();
         FastLED.show();
         textXOffset++;
+        if (textColor == 1){rainbowStartingHue++;}
         int maxOffset = text.length() * 6;
         if (textXOffset > maxOffset) textXOffset = -X;
         delay(nextFrameDelay);
