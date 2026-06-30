@@ -17,7 +17,6 @@ e
 		3: Pulse
 		4: Snake (setcolor)
 		5: Rainbow fill
-	s ~: Speed in miliseconds
 	c ~ ~ ~: Set a custom color for the effects
 a: Only supports 8 color mode
 	s ~: This defines the number of frames in the sequence maximum 10
