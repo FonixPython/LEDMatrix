@@ -1,11 +1,13 @@
 #include <FastLED.h>
 
 #define LED_PIN 13
-#define NUM_LEDS 84
 #define MAX_FRAMES 10
 
 #define X 7
 #define Y 12
+#define NUM_LEDS 84
+
+
 
 CRGB leds[NUM_LEDS];
 
@@ -16,6 +18,7 @@ char animationBuffer[MAX_FRAMES][NUM_LEDS];
 int animationFrameCount = 0;
 bool animationIsPlaying = false;
 int animationCurrentFrame = 0;
+CRGB effectColor = CRGB(0,0,0);
 
 void setup() {
     Serial.begin(9600);
@@ -29,12 +32,6 @@ void playBootAnimation() {
         leds[i] = CRGB(0, 255, 0);
         FastLED.show();
         delay(15);
-    }
-
-    for (int i = 0; i < 20; i++) {
-        fadeToBlackBy(leds, NUM_LEDS, 50);
-        FastLED.show();
-        delay(20);
     }
 
     fill_solid(leds, NUM_LEDS, CRGB(0, 255, 0));
@@ -88,9 +85,53 @@ int coordinatesToLedAddress(int x, int y){
 }
 
 
-void generateNextEffectFrame(){
-
+void snakeEffect(){
+    for (int i = 0; i < NUM_LEDS; i++) {
+        fadeToBlackBy(leds, NUM_LEDS, 40);
+        leds[i] = effectColor;
+        FastLED.show();
+        delay(nextFrameDelay);
+    };
 }
+
+void pulseEffect(){
+    for (int brightness = 0; brightness <=100;brightness++) {
+        fill_solid(leds, NUM_LEDS, CRGB(
+            (effectColor.r*brightness)/100,
+            (effectColor.g*brightness)/100,
+            (effectColor.b*brightness)/100)
+        );
+        FastLED.show();
+        delay(min(100,nextFrameDelay));
+    };
+    for (int brightness = 100; brightness >=0;brightness--) {
+        fill_solid(leds, NUM_LEDS, CRGB(
+            (effectColor.r*brightness)/100,
+            (effectColor.g*brightness)/100,
+            (effectColor.b*brightness)/100)
+        );
+        FastLED.show();
+        delay(min(30,nextFrameDelay));
+    };
+}
+
+void renderEffects(){
+    switch (effectMode){
+        case 0:
+            break;
+        case 1:
+            break;
+        case 2:
+            break;
+        case 3:
+            pulseEffect();
+            break;
+        case 4:
+            snakeEffect();
+            break;
+        }
+}
+
 
 void parseSerialInput(){
     String input = Serial.readStringUntil('\n');
@@ -148,6 +189,9 @@ void parseSerialInput(){
                 case 's':
                     nextFrameDelay = ia;
                     break;
+                case 'c':
+                    effectColor = CRGB(ia,ib,ic);
+                    break;
             }
             break;
         case 'a':
@@ -186,5 +230,8 @@ void loop() {
         if (animationCurrentFrame >= animationFrameCount) {
             animationCurrentFrame = 0;
         }
+    }
+    if (displayMode == 1){
+        renderEffects();
     }
 }
