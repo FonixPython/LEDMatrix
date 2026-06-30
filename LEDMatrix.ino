@@ -1,3 +1,4 @@
+#include <avr/pgmspace.h>
 #include <FastLED.h>
 
 #define LED_PIN 13
@@ -11,255 +12,271 @@
 
 CRGB leds[NUM_LEDS];
 
+
+// Modes
 byte displayMode = 0;
 byte effectMode = 0;
+
+// Effect Properties
 int nextFrameDelay = 100;
-char animationBuffer[MAX_FRAMES][NUM_LEDS];
-int animationFrameCount = 0;
-bool animationIsPlaying = false;
-int animationCurrentFrame = 0;
-CRGB effectColor = CRGB(0,0,0);
 int rainbowStartingHue = 0;
-int textXOffset = 0;
-String text = "HELLO_WORLD";
+char text[64];
+uint8_t animationBuffer[MAX_FRAMES][NUM_LEDS/2];
+int animationFrameCount = 0;
+CRGB effectColor = CRGB(0,0,0);
 int textColor = 0;
 
-const byte fontArray[][7] = {
-  // A
-  {0b01110,
-   0b10001,
-   0b10001,
-   0b11111,
-   0b10001,
-   0b10001,
-   0b10001},
 
-  // B
-  {0b11110,
-   0b10001,
-   0b10001,
-   0b11110,
-   0b10001,
-   0b10001,
-   0b11110},
+// State Variables
+int textXOffset = 0;
+int animationCurrentFrame = 0;
+bool animationIsPlaying = false;
+int effectIndex1 = 0;
 
-  // C
-  {0b01111,
-   0b10000,
-   0b10000,
-   0b10000,
-   0b10000,
-   0b10000,
-   0b01111},
 
-  // D
-  {0b11110,
-   0b10001,
-   0b10001,
-   0b10001,
-   0b10001,
-   0b10001,
-   0b11110},
 
-  // E
-  {0b11111,
-   0b10000,
-   0b10000,
-   0b11110,
-   0b10000,
-   0b10000,
-   0b11111},
+const byte fontArray[][7] PROGMEM = {
+    // A
+    {0b01110,
+    0b10001,
+    0b10001,
+    0b11111,
+    0b10001,
+    0b10001,
+    0b10001},
 
-  // F
-  {0b11111,
-   0b10000,
-   0b10000,
-   0b11110,
-   0b10000,
-   0b10000,
-   0b10000},
+    // B
+    {0b11110,
+    0b10001,
+    0b10001,
+    0b11110,
+    0b10001,
+    0b10001,
+    0b11110},
 
-  // G
-  {0b01111,
-   0b10000,
-   0b10000,
-   0b10111,
-   0b10001,
-   0b10001,
-   0b01111},
+    // C
+    {0b01111,
+    0b10000,
+    0b10000,
+    0b10000,
+    0b10000,
+    0b10000,
+    0b01111},
 
-  // H
-  {0b10001,
-   0b10001,
-   0b10001,
-   0b11111,
-   0b10001,
-   0b10001,
-   0b10001},
+    // D
+    {0b11110,
+    0b10001,
+    0b10001,
+    0b10001,
+    0b10001,
+    0b10001,
+    0b11110},
 
-  // I
-  {0b01110,
-   0b00100,
-   0b00100,
-   0b00100,
-   0b00100,
-   0b00100,
-   0b01110},
+    // E
+    {0b11111,
+    0b10000,
+    0b10000,
+    0b11110,
+    0b10000,
+    0b10000,
+    0b11111},
 
-  // J
-  {0b00111,
-   0b00010,
-   0b00010,
-   0b00010,
-   0b10010,
-   0b10010,
-   0b01100},
+    // F
+    {0b11111,
+    0b10000,
+    0b10000,
+    0b11110,
+    0b10000,
+    0b10000,
+    0b10000},
 
-  // K
-  {0b10001,
-   0b10010,
-   0b10100,
-   0b11000,
-   0b10100,
-   0b10010,
-   0b10001},
+    // G
+    {0b01111,
+    0b10000,
+    0b10000,
+    0b10111,
+    0b10001,
+    0b10001,
+    0b01111},
 
-  // L
-  {0b10000,
-   0b10000,
-   0b10000,
-   0b10000,
-   0b10000,
-   0b10000,
-   0b11111},
+    // H
+    {0b10001,
+    0b10001,
+    0b10001,
+    0b11111,
+    0b10001,
+    0b10001,
+    0b10001},
 
-  // M
-  {0b10001,
-   0b11011,
-   0b10101,
-   0b10101,
-   0b10001,
-   0b10001,
-   0b10001},
+    // I
+    {0b01110,
+    0b00100,
+    0b00100,
+    0b00100,
+    0b00100,
+    0b00100,
+    0b01110},
 
-  // N
-  {0b10001,
-   0b11001,
-   0b10101,
-   0b10011,
-   0b10001,
-   0b10001,
-   0b10001},
+    // J
+    {0b00111,
+    0b00010,
+    0b00010,
+    0b00010,
+    0b10010,
+    0b10010,
+    0b01100},
 
-  // O
-  {0b01110,
-   0b10001,
-   0b10001,
-   0b10001,
-   0b10001,
-   0b10001,
-   0b01110},
+    // K
+    {0b10001,
+    0b10010,
+    0b10100,
+    0b11000,
+    0b10100,
+    0b10010,
+    0b10001},
 
-  // P
-  {0b11110,
-   0b10001,
-   0b10001,
-   0b11110,
-   0b10000,
-   0b10000,
-   0b10000},
+    // L
+    {0b10000,
+    0b10000,
+    0b10000,
+    0b10000,
+    0b10000,
+    0b10000,
+    0b11111},
 
-  // Q
-  {0b01110,
-   0b10001,
-   0b10001,
-   0b10001,
-   0b10101,
-   0b10010,
-   0b01101},
+    // M
+    {0b10001,
+    0b11011,
+    0b10101,
+    0b10101,
+    0b10001,
+    0b10001,
+    0b10001},
 
-  // R
-  {0b11110,
-   0b10001,
-   0b10001,
-   0b11110,
-   0b10100,
-   0b10010,
-   0b10001},
+    // N
+    {0b10001,
+    0b11001,
+    0b10101,
+    0b10011,
+    0b10001,
+    0b10001,
+    0b10001},
 
-  // S
-  {0b01111,
-   0b10000,
-   0b10000,
-   0b01110,
-   0b00001,
-   0b00001,
-   0b11110},
+    // O
+    {0b01110,
+    0b10001,
+    0b10001,
+    0b10001,
+    0b10001,
+    0b10001,
+    0b01110},
 
-  // T
-  {0b11111,
-   0b00100,
-   0b00100,
-   0b00100,
-   0b00100,
-   0b00100,
-   0b00100},
+    // P
+    {0b11110,
+    0b10001,
+    0b10001,
+    0b11110,
+    0b10000,
+    0b10000,
+    0b10000},
 
-  // U
-  {0b10001,
-   0b10001,
-   0b10001,
-   0b10001,
-   0b10001,
-   0b10001,
-   0b01110},
+    // Q
+    {0b01110,
+    0b10001,
+    0b10001,
+    0b10001,
+    0b10101,
+    0b10010,
+    0b01101},
 
-  // V
-  {0b10001,
-   0b10001,
-   0b10001,
-   0b10001,
-   0b10001,
-   0b01010,
-   0b00100},
+    // R
+    {0b11110,
+    0b10001,
+    0b10001,
+    0b11110,
+    0b10100,
+    0b10010,
+    0b10001},
 
-  // W
-  {0b10001,
-   0b10001,
-   0b10001,
-   0b10101,
-   0b10101,
-   0b10101,
-   0b01010},
+    // S
+    {0b01111,
+    0b10000,
+    0b10000,
+    0b01110,
+    0b00001,
+    0b00001,
+    0b11110},
 
-  // X
-  {0b10001,
-   0b10001,
-   0b01010,
-   0b00100,
-   0b01010,
-   0b10001,
-   0b10001},
+    // T
+    {0b11111,
+    0b00100,
+    0b00100,
+    0b00100,
+    0b00100,
+    0b00100,
+    0b00100},
 
-  // Y
-  {0b10001,
-   0b10001,
-   0b01010,
-   0b00100,
-   0b00100,
-   0b00100,
-   0b00100},
+    // U
+    {0b10001,
+    0b10001,
+    0b10001,
+    0b10001,
+    0b10001,
+    0b10001,
+    0b01110},
 
-  // Z
-  {0b11111,
-   0b00001,
-   0b00010,
-   0b00100,
-   0b01000,
-   0b10000,
-   0b11111}
-};
-const byte numberArray[][7] = {
+    // V
+    {0b10001,
+    0b10001,
+    0b10001,
+    0b10001,
+    0b10001,
+    0b01010,
+    0b00100},
+
+    // W
+    {0b10001,
+    0b10001,
+    0b10001,
+    0b10101,
+    0b10101,
+    0b10101,
+    0b01010},
+
+    // X
+    {0b10001,
+    0b10001,
+    0b01010,
+    0b00100,
+    0b01010,
+    0b10001,
+    0b10001},
+
+    // Y
+    {0b10001,
+    0b10001,
+    0b01010,
+    0b00100,
+    0b00100,
+    0b00100,
+    0b00100},
+
+    // Z
+    {0b11111,
+    0b00001,
+    0b00010,
+    0b00100,
+    0b01000,
+    0b10000,
+    0b11111},
+
+    {0b00000,
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00000,
+    0b00000},
     {0b01110,0b10001,0b10011,0b10101,0b11001,0b10001,0b01110}, // 0
     {0b00100,0b01100,0b00100,0b00100,0b00100,0b00100,0b01110}, // 1
     {0b01110,0b10001,0b00001,0b00010,0b00100,0b01000,0b11111}, // 2
@@ -272,11 +289,6 @@ const byte numberArray[][7] = {
     {0b01110,0b10001,0b10001,0b01111,0b00001,0b00001,0b01110}  // 9
 };
 
-void setup() {
-    Serial.begin(9600);
-    FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-    playBootAnimation();
-}
 
 void playBootAnimation() {
     for (int i = 0; i < NUM_LEDS; i++) {
@@ -295,31 +307,57 @@ void playBootAnimation() {
     delay(300);
 }
 
+void setup() {
+    Serial.begin(9600);
+    FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+    playBootAnimation();
+}
+
+void setPixelInAnimationBuffer(uint8_t frame, uint8_t index, uint8_t value) {
+    uint8_t &b = animationBuffer[frame][index >> 1];
+    if (index & 1) {
+        b = (b & 0x0F) | (value << 4);   // high nibble
+    } else {
+        b = (b & 0xF0) | (value & 0x0F); // low nibble
+    }
+    if (frame >= MAX_FRAMES) return;
+}
+
+uint8_t getPixelInAnimationBuffer(uint8_t frame, uint8_t index) {
+    uint8_t b = animationBuffer[frame][index >> 1];
+    if (index & 1) {
+        return b >> 4;
+    } else {
+        return b & 0x0F;
+    }
+    if (frame >= MAX_FRAMES) return;
+}
+
 void convertAnimationFrameBuffer(int frameIndex){
     for (int i = 0; i<NUM_LEDS; i++){
-        switch (animationBuffer[frameIndex][i]){
-            case '0':
+        switch (getPixelInAnimationBuffer(frameIndex,i)){
+            case 0:
                 leds[i] = CRGB(0,0,0);
                 break;
-            case '1':
+            case 1:
                 leds[i] = CRGB(255,0,0);
                 break;
-            case '2':
+            case 2:
                 leds[i] = CRGB(0,255,0);
                 break;
-            case '3':
+            case 3:
                 leds[i] = CRGB(0,0,255);
                 break;
-            case '4':
+            case 4:
                 leds[i] = CRGB(255,255,0);
                 break;
-            case '5':
+            case 5:
                 leds[i] = CRGB(255,0,255);
                 break;
-            case '6':
+            case 6:
                 leds[i] = CRGB(0,255,255);
                 break;
-            case '7':
+            case 7:
                 leds[i] = CRGB(255,255,255);
                 break;
         }
@@ -335,49 +373,42 @@ int coordinatesToLedAddress(int x, int y){
 }
 
 void snakeEffect(){
-    for (int i = 0; i < NUM_LEDS; i++) {
-        fadeToBlackBy(leds, NUM_LEDS, 40);
-        leds[i] = effectColor;
-        FastLED.show();
-        delay(nextFrameDelay);
-    };
+    fadeToBlackBy(leds, NUM_LEDS, 40);
+    leds[effectIndex1] = effectColor;
+    effectIndex1++;
+    if (effectIndex1>=NUM_LEDS){effectIndex1=0;}
 }
 
 void pulseEffect(){
-    for (int brightness = 0; brightness <=100;brightness++) {
+    if (effectIndex1 <= 50){
         fill_solid(leds, NUM_LEDS, CRGB(
-            (effectColor.r*brightness)/100,
-            (effectColor.g*brightness)/100,
-            (effectColor.b*brightness)/100)
+            (effectColor.r*effectIndex1)/50,
+            (effectColor.g*effectIndex1)/50,
+            (effectColor.b*effectIndex1)/50)
         );
-        FastLED.show();
-        delay(min(100,nextFrameDelay));
-    };
-    for (int brightness = 100; brightness >=0;brightness--) {
+    } else {
         fill_solid(leds, NUM_LEDS, CRGB(
-            (effectColor.r*brightness)/100,
-            (effectColor.g*brightness)/100,
-            (effectColor.b*brightness)/100)
+            (effectColor.r*(100-effectIndex1))/50,
+            (effectColor.g*(100-effectIndex1))/50,
+            (effectColor.b*(100-effectIndex1))/50)
         );
-        FastLED.show();
-        delay(min(30,nextFrameDelay));
-    };
+    }
+    effectIndex1++;
+    if(effectIndex1>=100){effectIndex1=0;}
 }
 
 void scammerEffect(){
-    for (int i = 0; i<Y;i++){
-        for (int x=0; x<X;x++){
-            if(i>=1){
-                leds[coordinatesToLedAddress(x,i-1)] = CRGB(0,0,0);
-            }
-            else {
-                leds[coordinatesToLedAddress(x,Y-1)] = CRGB(0,0,0);
-            }
-            leds[coordinatesToLedAddress(x,i)] = effectColor;
+    for (int x=0; x<X;x++){
+        if(effectIndex1>=1){
+            leds[coordinatesToLedAddress(x,effectIndex1-1)] = CRGB(0,0,0);
         }
-        FastLED.show();
-        delay(nextFrameDelay);
+        else {
+            leds[coordinatesToLedAddress(x,Y-1)] = CRGB(0,0,0);
+        }
+        leds[coordinatesToLedAddress(x,effectIndex1)] = effectColor;
     }
+    effectIndex1++;
+    if (effectIndex1>=Y){effectIndex1 = 0;}
 }
 
 void rainbowEffect(){
@@ -403,23 +434,18 @@ void applyCheckerEffect(){
 
 void rainbowFill(){
     fill_solid(leds,NUM_LEDS,CHSV(rainbowStartingHue, 255, 255));
-    FastLED.show();
 }
 
 void renderEffects(){
     switch (effectMode){
         case 0:
             rainbowEffect();
-            FastLED.show();
             rainbowStartingHue++;
-            delay(nextFrameDelay);
             break;
         case 1:
             rainbowEffect();
             applyCheckerEffect();
-            FastLED.show();
             rainbowStartingHue++;
-            delay(nextFrameDelay);
             break;
         case 2:
             scammerEffect();
@@ -433,16 +459,16 @@ void renderEffects(){
         case 5:
             rainbowFill();
             rainbowStartingHue++;
-            delay(nextFrameDelay);
             break;
         }
 }
 
-void parseSerialInput(){
-    String input = Serial.readStringUntil('\n');
-    char buf[120];
-    input.toCharArray(buf, 120);
 
+void parseSerialInput(){
+    char buf[120];
+    size_t len = Serial.readBytesUntil('\n', buf, sizeof(buf) - 1);
+    buf[len] = '\0';
+    
     char* cmd = strtok(buf, " ");
     char* a   = strtok(NULL, " ");
     char* b   = strtok(NULL, " ");
@@ -463,16 +489,11 @@ void parseSerialInput(){
                 case 'm':
                     displayMode = ia;
                     break;
-                case 's':
-                    switch (cmd[2]){
-                        case 'h':
-                            break;
-                        case 'f':
-                            break;
-                    }
-                    break;
                 case 'b':
                     FastLED.setBrightness(ia);
+                    break;
+                case 's':
+                    nextFrameDelay = ia;
                     break;
             }
             break;
@@ -490,9 +511,7 @@ void parseSerialInput(){
             switch (cmd[1]){
                 case 'm':
                     effectMode = ia;
-                    break;
-                case 's':
-                    nextFrameDelay = ia;
+                    effectIndex1 = 0;
                     break;
                 case 'c':
                     effectColor = CRGB(ia,ib,ic);
@@ -507,7 +526,9 @@ void parseSerialInput(){
                     }
                     break;
                 case 'f':
-                    strcpy(animationBuffer[ia], b);
+                    for (int i=0;i<NUM_LEDS;i++){
+                        setPixelInAnimationBuffer(ia,i,b[i]);
+                    }
                     break;
                 case 'w':
                     nextFrameDelay = ia;
@@ -520,12 +541,14 @@ void parseSerialInput(){
         case 't':
             switch(cmd[1]){
                 case 's':
-                    text = a;
+                    strncpy(text, a, sizeof(text));
+                    text[63] = '\0';
                     break;
                 case 'c':
                     textColor = ia;
-
+                    break;
             }
+            break;
         case 'd':
             if(displayMode==0){FastLED.show();}
             break;
@@ -533,35 +556,40 @@ void parseSerialInput(){
 }
 
 int charToIndex(char x) {
-    if (x >= 'A' && x <= 'Z') {
-        return x - 'A';
+    if (x >= 'a' && x <= 'z') x -= 32;
+    if (x >= 'A' && x <= 'Z') {return x - 'A';}
+    if (x >= '0' && x <= '9') {return (x - '0')+27;}
+    return 26;
+}
+
+void loadFontChar(byte dest[7], int fontIndex) {
+    for (int y = 0; y < 7; y++) {
+        dest[y] = pgm_read_byte(&fontArray[fontIndex][y]);
     }
-    return -1;
 }
 
 void renderTextFrame(){
+    int textLength = strlen(text);
     int topPadding = 2;
     fill_solid(leds,NUM_LEDS,CRGB(0,0,0));
     for (int x = 0; x < X; x++){
-        int textColumn = x + textXOffset; // The x position regarding all the already rendered text
-        int charIndex = textColumn / 6; // Index of the character from the original string
-        int charColumn = textColumn % 6; // The current characters x index to use
+        int textColumn = x + textXOffset; 
+        int charIndex = textColumn / 6;
+        int charColumn = textColumn % 6;
         
-        if (charIndex >= text.length()) continue;
-        if (charColumn == 5) continue; // Leave one blank
-        byte* currentChar = fontArray[charToIndex(text[charIndex])]; // Current character's bitmap
+        if (charIndex >= textLength) continue;
+        if (charColumn == 5) continue;
 
-        for (int y = 0; y < 5 + topPadding; y++){
+        byte currentChar[7];
+        loadFontChar(currentChar, charToIndex(text[charIndex]));
+        
+        for (int y = 0; y < 7; y++){
             bool on = currentChar[y] & (1 << (4 - charColumn));
             if (on){
-                if (textColor == 0){
-                    leds[coordinatesToLedAddress(x,y+topPadding)] = effectColor;
-                }
-                if (textColor == 1){
-                    leds[coordinatesToLedAddress(x,y+topPadding)] = CHSV(rainbowStartingHue + ((x+y)*10), 255, 255);
-                }
+                if (textColor == 0){leds[coordinatesToLedAddress(x,y+topPadding)] = effectColor;}
+                if (textColor == 1){leds[coordinatesToLedAddress(x,y+topPadding)] = CHSV(rainbowStartingHue + ((x+y)*10), 255, 255);}
             }
-        } // Render column
+        }
     }
 }
 
@@ -572,23 +600,21 @@ void loop() {
     }
     if (animationIsPlaying && displayMode == 2){
         convertAnimationFrameBuffer(animationCurrentFrame);
-        FastLED.show();
-        delay(nextFrameDelay);
         animationCurrentFrame++;
         if (animationCurrentFrame >= animationFrameCount) {
             animationCurrentFrame = 0;
         }
     }
-    if (displayMode == 1){
-        renderEffects();
-    }
+    if (displayMode == 1){renderEffects();}
     if (displayMode == 3){
         renderTextFrame();
-        FastLED.show();
         textXOffset++;
         if (textColor == 1){rainbowStartingHue++;}
-        int maxOffset = text.length() * 6;
+        int maxOffset = strlen(text) * 6;
         if (textXOffset > maxOffset) textXOffset = -X;
-        delay(nextFrameDelay);
     }
+    FastLED.show();
+    static unsigned long last = 0;
+    if (millis() - last < nextFrameDelay) return;
+    last = millis();
 }

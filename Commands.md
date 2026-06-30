@@ -4,13 +4,11 @@ s
 		1: Effect mode
 		2: Animation mode
 		3: Text mode
-	s
-		h: Frequency of strobe
-		f: Fill in percent???
 	b ~: Set brightness of the led strip
 		0-255
-f: ~ ~ ~, depending on bit depth
-o: ~{x} ~{y} ~ ~ ~ (depending on bit depth)
+	s ~: Set speed in miliseconds
+f ~ ~ ~: Fill solid color into buffer
+o ~{x} ~{y} ~ ~ ~: Change selected pixels from buffer
 e
 	m ~: Set the mode
 		0: Rainbow (from corner)
@@ -24,7 +22,6 @@ e
 a: Only supports 8 color mode
 	s ~: This defines the number of frames in the sequence maximum 10
 	f ~ ~{Number of pixels}: Sets a frames buffer indexed from 0
-	w ~: Sets delay between frames
 d: Displays the current buffer(doesn't apply to animated effects)
 t
 	s ~: Set text use "_" for spaces
