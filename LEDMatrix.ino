@@ -19,6 +19,8 @@ int animationFrameCount = 0;
 bool animationIsPlaying = false;
 int animationCurrentFrame = 0;
 CRGB effectColor = CRGB(0,0,0);
+int rainbowStartingHue = 0;
+
 
 void setup() {
     Serial.begin(9600);
@@ -84,7 +86,6 @@ int coordinatesToLedAddress(int x, int y){
     return address;
 }
 
-
 void snakeEffect(){
     for (int i = 0; i < NUM_LEDS; i++) {
         fadeToBlackBy(leds, NUM_LEDS, 40);
@@ -114,6 +115,7 @@ void pulseEffect(){
         delay(min(30,nextFrameDelay));
     };
 }
+
 void scammerEffect(){
     for (int i = 0; i<Y;i++){
         for (int x=0; x<X;x++){
@@ -130,11 +132,46 @@ void scammerEffect(){
     }
 }
 
+void rainbowEffect(){
+    for (int y=0;y<Y;y++){
+        for (int x=0;x<X;x++){
+            leds[coordinatesToLedAddress(x,y)]=CHSV(rainbowStartingHue + ((x+y)*10), 255, 255);
+        }
+    }
+}
+
+void applyCheckerEffect(){
+    for (int y=0;y<Y;y++){
+        for (int x=0;x<X;x++){
+            if (((x%2) == (rainbowStartingHue%2))&&((y%2) == (rainbowStartingHue%2))){
+                leds[coordinatesToLedAddress(x,y)]=effectColor;
+            }
+            if (((x%2) != (rainbowStartingHue%2))&&((y%2) != (rainbowStartingHue%2))){
+                leds[coordinatesToLedAddress(x,y)]=effectColor;
+            }
+        }
+    }
+}
+
+void rainbowFill(){
+    fill_solid(leds,NUM_LEDS,CHSV(rainbowStartingHue, 255, 255));
+    FastLED.show();
+}
+
 void renderEffects(){
     switch (effectMode){
         case 0:
+            rainbowEffect();
+            FastLED.show();
+            rainbowStartingHue++;
+            delay(nextFrameDelay);
             break;
         case 1:
+            rainbowEffect();
+            applyCheckerEffect();
+            FastLED.show();
+            rainbowStartingHue++;
+            delay(nextFrameDelay);
             break;
         case 2:
             scammerEffect();
@@ -144,6 +181,11 @@ void renderEffects(){
             break;
         case 4:
             snakeEffect();
+            break;
+        case 5:
+            rainbowFill();
+            rainbowStartingHue++;
+            delay(nextFrameDelay);
             break;
         }
 }
