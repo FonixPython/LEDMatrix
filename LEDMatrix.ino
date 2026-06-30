@@ -34,6 +34,19 @@ bool animationIsPlaying = false;
 int effectIndex1 = 0;
 
 
+CRGB palette[10] = {
+    CRGB::Black,
+    CRGB::Red,
+    CRGB::Green,
+    CRGB::Blue,
+    CRGB::Yellow,
+    CRGB::Magenta,
+    CRGB::Cyan,
+    CRGB::White,
+    CRGB(255,128,64),
+    CRGB(64,128,255),
+};
+
 
 const byte fontArray[][7] PROGMEM = {
     // A
@@ -335,32 +348,7 @@ uint8_t getPixelInAnimationBuffer(uint8_t frame, uint8_t index) {
 
 void convertAnimationFrameBuffer(int frameIndex){
     for (int i = 0; i<NUM_LEDS; i++){
-        switch (getPixelInAnimationBuffer(frameIndex,i)){
-            case 0:
-                leds[i] = CRGB(0,0,0);
-                break;
-            case 1:
-                leds[i] = CRGB(255,0,0);
-                break;
-            case 2:
-                leds[i] = CRGB(0,255,0);
-                break;
-            case 3:
-                leds[i] = CRGB(0,0,255);
-                break;
-            case 4:
-                leds[i] = CRGB(255,255,0);
-                break;
-            case 5:
-                leds[i] = CRGB(255,0,255);
-                break;
-            case 6:
-                leds[i] = CRGB(0,255,255);
-                break;
-            case 7:
-                leds[i] = CRGB(255,255,255);
-                break;
-        }
+        leds[i] = palette[getPixelInAnimationBuffer(frameIndex,i)];
     }
 }
 
@@ -468,7 +456,7 @@ void parseSerialInput(){
     char buf[120];
     size_t len = Serial.readBytesUntil('\n', buf, sizeof(buf) - 1);
     buf[len] = '\0';
-    
+
     char* cmd = strtok(buf, " ");
     char* a   = strtok(NULL, " ");
     char* b   = strtok(NULL, " ");
@@ -530,11 +518,11 @@ void parseSerialInput(){
                         setPixelInAnimationBuffer(ia,i,b[i]);
                     }
                     break;
-                case 'w':
-                    nextFrameDelay = ia;
-                    break;
                 case 'p':
                     animationIsPlaying = !animationIsPlaying;
+                    break;
+                case 'c':
+                    palette[ia] = CRGB(ib,ic,id);
                     break;
             }
             break;

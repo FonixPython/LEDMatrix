@@ -22,6 +22,8 @@ e
 a: Only supports 8 color mode
 	s ~: This defines the number of frames in the sequence maximum 10
 	f ~ ~{Number of pixels}: Sets a frames buffer indexed from 0
+	p: Play animation
+	c ~{color index 1-9} ~ ~ ~: Build a custom color palette out of 10 colors 
 d: Displays the current buffer(doesn't apply to animated effects)
 t
 	s ~: Set text use "_" for spaces
