@@ -538,7 +538,6 @@ int charToIndex(char x) {
 
 void renderTextFrame(){
     int topPadding = 2;
-    int spacesLeft = 0;
     fill_solid(leds,NUM_LEDS,CRGB(0,0,0));
     for (int x = 0; x < X; x++){
         int textColumn = x + textXOffset; // The x position regarding all the already rendered text
