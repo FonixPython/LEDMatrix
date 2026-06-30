@@ -114,6 +114,21 @@ void pulseEffect(){
         delay(min(30,nextFrameDelay));
     };
 }
+void scammerEffect(){
+    for (int i = 0; i<Y;i++){
+        for (int x=0; x<X;x++){
+            if(i>=1){
+                leds[coordinatesToLedAddress(x,i-1)] = CRGB(0,0,0);
+            }
+            else {
+                leds[coordinatesToLedAddress(x,Y-1)] = CRGB(0,0,0);
+            }
+            leds[coordinatesToLedAddress(x,i)] = effectColor;
+        }
+        FastLED.show();
+        delay(nextFrameDelay);
+    }
+}
 
 void renderEffects(){
     switch (effectMode){
@@ -122,6 +137,7 @@ void renderEffects(){
         case 1:
             break;
         case 2:
+            scammerEffect();
             break;
         case 3:
             pulseEffect();
