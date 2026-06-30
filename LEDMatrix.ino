@@ -547,8 +547,6 @@ void renderTextFrame(){
         
         if (charIndex >= text.length()) continue;
         if (charColumn == 5) continue; // Leave one blank
-        if ((text[charIndex] == '_')&&spacesLeft==0){spacesLeft=2;}
-        if (spacesLeft>0){spacesLeft--;continue;}
         byte* currentChar = fontArray[charToIndex(text[charIndex])]; // Current character's bitmap
 
         for (int y = 0; y < 5 + topPadding; y++){
