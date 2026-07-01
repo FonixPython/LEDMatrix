@@ -7,7 +7,7 @@ s
 	b ~: Set brightness of the led strip
 		0-255
 	s ~: Set speed in miliseconds
-f ~ ~ ~: Fill solid color into buffer
+f: Fill solid color (effect color) into buffer
 o ~{x} ~{y} ~ ~ ~: Change selected pixels from buffer
 e
 	m ~: Set the mode
@@ -31,4 +31,3 @@ t
 		1: Rainbow color mode
 g: Get info about arduino
 	d: Get dimensions, in a new line returns "{X}x{Y}"
-	
