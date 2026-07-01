@@ -486,7 +486,7 @@ void parseSerialInput(){
             }
             break;
         case 'f':
-            fill_solid(leds, NUM_LEDS, CRGB(ia,ib,ic));
+            fill_solid(leds, NUM_LEDS, effectColor);
             break;
         case 'o':{
             if (ia >= 0 && ia < X && ib >= 0 && ib < Y) {
@@ -534,6 +534,14 @@ void parseSerialInput(){
                     break;
                 case 'c':
                     textColor = ia;
+                    break;
+            }
+            break;
+        case 'g':
+            switch(cmd[1]){
+                case 'd':
+                    String returnString = String(X) + String("x") + String(Y);
+                    Serial.println(returnString);
                     break;
             }
             break;

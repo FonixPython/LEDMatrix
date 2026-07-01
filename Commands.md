@@ -29,3 +29,6 @@ t
 	c ~:
 		0: Solid color from effect color
 		1: Rainbow color mode
+g: Get info about arduino
+	d: Get dimensions, in a new line returns "{X}x{Y}"
+	
