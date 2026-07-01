@@ -537,9 +537,6 @@ void parseSerialInput(){
                     break;
             }
             break;
-        case 'd':
-            if(displayMode==0){FastLED.show();}
-            break;
     }
 }
 
@@ -584,7 +581,7 @@ void renderTextFrame(){
 
 void loop() {
     if (Serial.available()) {
-        parseSerialInputx)();
+        parseSerialInput();
     }
     if (animationIsPlaying && displayMode == 2){
         convertAnimationFrameBuffer(animationCurrentFrame);
@@ -602,7 +599,5 @@ void loop() {
         if (textXOffset > maxOffset) textXOffset = -X;
     }
     FastLED.show();
-    static unsigned long last = 0;
-    if (millis() - last < nextFrameDelay) return;
-    last = millis();
+    delay(nextFrameDelay);
 }
