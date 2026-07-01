@@ -1,10 +1,10 @@
 import serial
 import threading
 
-ser = serial.Serial("/dev/ttyUSB0",9600)
+ser = serial.Serial("/dev/ttyUSB1",57600)
 
 def read():
-    data = ser.read_until() # Blocks!
+    data = ser.read_until()
     print(data.decode(), end='')
 threading.Thread(target=read).start()
 
