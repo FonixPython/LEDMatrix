@@ -524,9 +524,11 @@ void parseSerialInput(){
             break;
         case 't':
             switch(cmd[1]){
-                case 's':
-                    strncpy(text, a, sizeof(text));
+                case 's':{
+                    String str = Serial.readStringUntil('\n');
+                    strncpy(text, str, sizeof(text));
                     text[63] = '\0';
+                }
                     break;
                 case 'c':
                     textColor = ia;
