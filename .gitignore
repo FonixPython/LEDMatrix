@@ -1,5 +1,6 @@
 .vscode
 build
 __pycache__/main.cpython-314.pyc
+__pycache__
 fasz.json
 animation.json

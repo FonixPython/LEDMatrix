@@ -441,7 +441,6 @@ void renderEffects(){
         }
 }
 
-
 void parseSerialInput(){
     char buf[63];
     size_t len = Serial.readBytesUntil('\n', buf, sizeof(buf) - 1);
@@ -524,11 +523,8 @@ void parseSerialInput(){
             break;
         case 't':
             switch(cmd[1]){
-                case 's':{
-                    String str = Serial.readStringUntil('\n');
-                    strncpy(text, str, sizeof(text));
-                    text[63] = '\0';
-                }
+                case 's':
+                    strncpy(text, a, sizeof(text));
                     break;
                 case 'c':
                     textColor = ia;
@@ -561,8 +557,6 @@ void loadFontChar(byte dest[7], int fontIndex) {
     }
 }
 
-
-
 void renderTextFrame(){
     int textLength = strlen(text);
     int topPadding = (Y-7)/2;
@@ -587,7 +581,6 @@ void renderTextFrame(){
         }
     }
 }
-
 
 void loop() {
     if (Serial.available()) {

@@ -2,14 +2,14 @@ import serial
 import json
 import time
 
-ser = serial.Serial("/dev/ttyUSB0",9600)
+ser = serial.Serial("/dev/ttyUSB1",9600)
 time.sleep(5)
 input("Start? ")
 def send(data): ser.write((data +"\n").encode())
-
+"""
 with open("animation.json","r") as f:
     data = json.load(f)
-
+"""
 
 
 def pixelToNibleArray(text):
@@ -25,7 +25,7 @@ def pixelToNibleArray(text):
         result.append(packed)
     return result
 
-
+"""
 send("gd")
 size = ser.read_until().decode('utf-8').strip()
 print(size)
@@ -53,6 +53,7 @@ for i in range(len(data["frames"])):
 
 
 send("ap")
+"""
 
 while True:
     send(input("Type in command:"))
