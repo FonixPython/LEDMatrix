@@ -10,7 +10,9 @@ class ControllerAPI():
         self.xDimension = None
         self.yDimension = None
     def getDevices(self):
-        portList = serial.tools.list_ports()
+        portList = serial.tools.list_ports.comports()
+        portsObject = [{"name":i.name,"device":i.device,"product":i.product} for i in portList]
+        return portsObject
     def connect(self,comport:str):
         self.serialSocket = serial.Serial(comport,BAUD_RATE)
         self._send("gd")
@@ -71,3 +73,8 @@ class ControllerAPI():
             case "Rainbow": modeIndex = 1
             case _: raise ValueError("Invalid color mode!")
         self._send("tc")
+
+
+if __name__ == "__main__":
+    controller = ControllerAPI()
+    controller.getDevices()
