@@ -27,7 +27,7 @@ as ~{frame count}: Sets the length of the animation sequence
 af ~{frame index}: Sets the index for frame to be recivied, frame data should be sent in a new line with a bytearray that uses the low and high nibbles for pixel data storage
 ap: Play animation
 ac ~{color index 1-9} ~{r} ~{g} ~{}: Build a custom color palette out of 10 full depth colors
-ts: Enters into text sending mode, text should be sent afterwards in a new line
+ts: Enters into text sending mode, text should be sent afterwards in a new line 
 	s ~: Set text use "_" for spaces
 	c ~:
 		0: Solid color from effect color
