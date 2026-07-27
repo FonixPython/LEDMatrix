@@ -1,5 +1,6 @@
 import serial
 import serial.tools.list_ports
+import time
 
 BAUD_RATE = 9600
 
@@ -13,12 +14,21 @@ class ControllerAPI():
         portList = serial.tools.list_ports.comports()
         portsObject = [{"name":i.name,"device":i.device,"product":i.product} for i in portList]
         return portsObject
+    def getStatus(self):
+        return {
+            "connected": self.serialSocket != None,
+            "dimensions":{
+                "x":self.xDimension,
+                "y":self.yDimension
+            }
+        }
     def connect(self,comport:str):
         self.serialSocket = serial.Serial(comport,BAUD_RATE)
+        time.sleep(5)
         self._send("gd")
         response = self.serialSocket.read_until().decode('utf-8').strip()
-        self.xDimension = int(size.split("x")[0])
-        self.yDimension = int(size.split("x")[1])
+        self.xDimension = int(response.split("x")[0])
+        self.yDimension = int(response.split("x")[1])
     def disconnect(self):
         if self.serialSocket: self.serialSocket.close()
         self.serialSocket = None

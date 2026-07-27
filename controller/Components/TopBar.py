@@ -39,21 +39,21 @@ class TopBar(QWidget):
         self.comboBox = QComboBox()
         self.selectorContainerLayout.addWidget(self.comboBox)
 
-        connectButton = QPushButton(text="Connect")
-        self.selectorContainerLayout.addWidget(connectButton)
-        
+        self.connectButton = QPushButton(text="Connect")
+        self.selectorContainerLayout.addWidget(self.connectButton)
+        self.connectButton.clicked.connect(self.connectButtonAction)
 
         self.stateDisplayContainer = QWidget()
         self.stateDisplayContainerLayout = QHBoxLayout(self.stateDisplayContainer)
         self.layout.addWidget(self.stateDisplayContainer)
         self.layout.setAlignment(self.stateDisplayContainer,Qt.AlignmentFlag.AlignRight)
 
+        self.sizeLabel = QLabel(text="")
+        self.stateDisplayContainerLayout.addWidget(self.sizeLabel)
 
         self.stateLabel = QLabel(text="Disconnected")
         self.stateDisplayContainerLayout.addWidget(self.stateLabel)
 
-        self.sizeLabel = QLabel(text="")
-        self.stateDisplayContainerLayout.addWidget(self.sizeLabel)
 
 
         self.setStyleSheet(f"""
@@ -110,3 +110,17 @@ class TopBar(QWidget):
         self.comboBox.clear()
         for i in devices:
             self.comboBox.addItem(f"{i['device']}")
+    
+    def connectButtonAction(self):
+        if self.controller.getStatus()["connected"]:
+            self.connectButton.setText("Connect")
+            self.controller.disconnect()
+            self.stateLabel.setText("Disconnected")
+            self.sizeLabel.setText("")
+        else:
+            self.controller.connect(self.comboBox.currentText())
+            result = self.controller.getStatus()
+            if result["connected"]:
+                self.stateLabel.setText("Connected")
+                self.sizeLabel.setText(f"{result['dimensions']['x']}x{result['dimensions']['y']}")
+                self.connectButton.setText("Disconnect")
