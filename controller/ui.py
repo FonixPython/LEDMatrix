@@ -5,6 +5,8 @@ from Components.BasicsPanel import BasicsPanel
 
 from Components.SingleFrame import SingleFrameEditor
 from Components.Pattern import PatternEditor
+from Components.Text import TextEditor
+
 
 from colors import colors
 
@@ -36,6 +38,9 @@ class App(QWidget):
         
         self.patternPanel = PatternEditor(controller=self.controller)
         self.modeStackedWidget.addWidget(self.patternPanel)
+        
+        self.textPanel = TextEditor(controller=self.controller)
+        self.modeStackedWidget.addWidget(self.textPanel)
         
 
         self.setStyleSheet(f"""

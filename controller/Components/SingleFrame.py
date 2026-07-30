@@ -119,18 +119,14 @@ class SingleFrameEditor(QWidget):
         else:
             self.preview.pixelGrid[y][x] = self.selectedColor
             self.preview.update()
-            threading.Thread(target=lambda:self.actionColorPixel(x,y)).start()
+            rgb = self.selectedColor.getRgb()
+            self.controller.setPixel(x,y,rgb[0],rgb[1],rgb[2])
     def handleMatrixFill(self):
         self.preview.pixelGrid = [[self.selectedColor for a in range(len(self.preview.pixelGrid[0]))] for b in range(len(self.preview.pixelGrid))]
         self.preview.update()
-        threading.Thread(target=self.actionFillColor).start()
-    def actionFillColor(self):
         rgb = self.selectedColor.getRgb()
         self.controller.setColor(rgb[0],rgb[1],rgb[2])
         self.controller.fillWithColor()
-    def actionColorPixel(self,x,y):
-        rgb = self.selectedColor.getRgb()
-        self.controller.setPixel(x,y,rgb[0],rgb[1],rgb[2])
     def handleOpenColorDialog(self):
         self.selectedColor=self.colorDialog.getColor(self.selectedColor)
         self.colorDisplay.setStyleSheet(f"""
