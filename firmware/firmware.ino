@@ -521,7 +521,7 @@ void parseSerialInput(){
                     animationCurrentFrame = 0;
                     break;
                 case 'c':
-                    if (ia<0 || ia>=10) return;
+                    if (ia >= 0 && ia < 10) return;
                     palette[ia] = CRGB(ib,ic,id);
                     break;
             }

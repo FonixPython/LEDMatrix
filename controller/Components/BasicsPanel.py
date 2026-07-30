@@ -7,10 +7,11 @@ from colors import colors
 
 
 class BasicsPanel(QWidget):
-    def __init__(self,controller,changeModeCallback):
+    def __init__(self,controller,changeModeCallback,speedCallback):
         super().__init__()
         self.controller = controller
         self.changeModeCallback = changeModeCallback
+        self.speedCallback = speedCallback
         self.layout = QVBoxLayout(self)
         self.setObjectName("basicsPanel")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -136,6 +137,8 @@ class BasicsPanel(QWidget):
 
     def speedSliderChange(self):
         self.speedLabel.setText(f"{self.speedSlider.value()} ms")
+        if self.speedCallback:
+            self.speedCallback(int(self.speedSlider.value()))
     def brightnessSliderChanged(self):
         self.brightnessLabel.setText(f"{int(self.brightnessSlider.value()/255*100)}%")
     def modeChanged(self):

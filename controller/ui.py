@@ -21,9 +21,9 @@ class App(QWidget):
         self.topBar = TopBar(controller=self.controller,connectionCallback=self.onConnection)
         self.mainLayout.addWidget(self.topBar)
         self.mainLayout.setAlignment(self.topBar, Qt.AlignmentFlag.AlignTop)
-        
 
-        self.basicsPanel = BasicsPanel(controller=self.controller,changeModeCallback=self.onModeChange)
+
+        self.basicsPanel = BasicsPanel(controller=self.controller,changeModeCallback=self.onModeChange,speedCallback=self.onSpeedChange)
         self.mainLayout.addWidget(self.basicsPanel)
         self.mainLayout.setAlignment(self.basicsPanel, Qt.AlignmentFlag.AlignTop)
         
@@ -45,8 +45,6 @@ class App(QWidget):
         self.textPanel = TextEditor(controller=self.controller)
         self.modeStackedWidget.addWidget(self.textPanel)
 
-        self.modeStackedWidget.setCurrentIndex(2)
-
         self.setStyleSheet(f"""
             *{{
                 margin:0;
@@ -60,3 +58,6 @@ class App(QWidget):
         self.animationPanel.resizeMatrix(x,y)
     def onModeChange(self,modeIndex):
         self.modeStackedWidget.setCurrentIndex(modeIndex)
+    def onSpeedChange(self,speed):
+        self.animationPanel.speed = speed
+        self.animationPanel.playTimer.setInterval(speed)

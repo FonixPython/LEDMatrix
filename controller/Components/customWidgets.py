@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QLabel,QWidget, QHBoxLayout,QVBoxLayout,QAbstractButton, QPushButton, QButtonGroup
+from PyQt6.QtWidgets import QLabel,QWidget, QHBoxLayout,QVBoxLayout,QAbstractButton, QPushButton, QButtonGroup, QScrollArea
 from PyQt6.QtCore import Qt, QRectF
 from PyQt6.QtGui import QColor, QPainter, QBrush
 from colors import colors
@@ -52,7 +52,7 @@ class MatrixDisplay(QWidget):
             (self.width()-(padding*self.x)) / self.x,
             (self.height()-(padding*self.y)) / self.y
         )
-
+        
         painter.setPen(Qt.PenStyle.NoPen)
         for y in range(self.y):
             for x in range(self.x):
@@ -103,10 +103,7 @@ class MatrixDisplay(QWidget):
             x = int(mx / step)
             y = int(my / step)
             
-            
-            print(x,y)
             if self.lastX != x or self.lastY != y:
-                print(x,y)
                 if 0 <= x < self.x and 0 <= y < self.y:
                     self.lastX = x
                     self.lastY = y
@@ -121,14 +118,14 @@ class ColorCard(QPushButton):
         self.color = color
         self.textData = text
         self.setCheckable(True)
-        self.setFixedHeight(60)
+        self.setFixedHeight(40)
         self.layout = QHBoxLayout(self)
         self.layout.setContentsMargins(0,0,0,0)
 
         self.layout.addWidget(QLabel(text))
         
         self.preview = QWidget()
-        self.preview.setFixedSize(350,60)
+        self.preview.setFixedSize(250,40)
         self.preview.setStyleSheet(f"""
             background: rgba{self.color.getRgb()};
             border-radius: 10px;
@@ -151,4 +148,78 @@ class ColorCard(QPushButton):
             border-radius: 10px;
         """)
 
+class TinyMatrix(QWidget):
+    def __init__(self,frame):
+        super().__init__()
+        self.frame = frame
 
+    def paintEvent(self,event):
+        painter = QPainter(self)
+        cellSize = min(
+            90 / len(self.frame[0]),
+            90 / len(self.frame)
+        )
+        self.setFixedSize(int(cellSize*len(self.frame[0])),int(cellSize*len(self.frame)))
+        for y in range(len(self.frame)):
+            for x in range(len(self.frame[0])):
+                rect = QRectF(
+                    x * cellSize,
+                    y * cellSize,
+                    cellSize,
+                    cellSize
+                )
+                painter.fillRect(rect,self.frame[y][x])
+
+class TinyDisplayCard(QPushButton):
+    def __init__(self,frame,number):
+        super().__init__()
+        self.number = number
+        self.setCheckable(True)
+        self.setChecked(False)
+        self.layout = QHBoxLayout(self)
+        self.layout.setContentsMargins(5,5,5,5)
+        self.matrix = TinyMatrix(frame)
+        self.matrix.setFixedSize(90,90)
+        self.setFixedSize(100,100)
+        self.layout.addWidget(self.matrix)
+        self.layout.setAlignment(self.matrix,Qt.AlignmentFlag.AlignCenter)
+
+
+    def updateFrame(self,frame):
+        self.matrix.frame = frame
+        self.matrix.update()
+
+class FrameDisplayScroller(QScrollArea):
+    def __init__(self,animationObject,maxFrames):
+        super().__init__()
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.maxFrames = maxFrames
+        self.scrolledWidget = QWidget()
+        self.scrolledWidget.setObjectName("scrolledWidget")
+        self.scrolledWidget.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.scrolledWidgetLayout = QHBoxLayout(self.scrolledWidget)
+        self.setWidget(self.scrolledWidget)
+        self.setWidgetResizable(False)
+        self.cards = []
+        self.buttonGroup = QButtonGroup(self.scrolledWidget)
+        self.buttonGroup.setExclusive(True)
+        for i in range(maxFrames):
+            frame = [[QColor("black") for i in range(8)] for x in range(8)]
+            card = TinyDisplayCard(frame,i)
+            card.setVisible(False)
+            self.buttonGroup.addButton(card)
+            if i == 0: card.setChecked(True)
+            self.scrolledWidgetLayout.addWidget(card)
+            self.cards.append(card)
+        self.scrolledWidget.adjustSize()
+        self.scrolledWidgetLayout.addStretch()
+        self.updateDisplay(animationObject)
+    def updateDisplay(self,animationObject):
+        for i,frame in enumerate(animationObject["frames"]):
+            self.cards[i].updateFrame(frame=[[animationObject["palette"][frame[b][a]] for a in range(len(frame[0]))] for b in range(len(frame))])
+            self.cards[i].setVisible(True)
+        for i in range(len(animationObject["frames"]),self.maxFrames):
+            self.cards[i].setVisible(False)
+        self.scrolledWidget.adjustSize()

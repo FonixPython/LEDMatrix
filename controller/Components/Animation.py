@@ -1,12 +1,13 @@
 from PyQt6.QtWidgets import QLabel,QWidget,QVBoxLayout, QHBoxLayout, QPushButton, QButtonGroup, QColorDialog
-from PyQt6.QtCore import Qt, QRectF
+from PyQt6.QtCore import Qt, QRectF, QTimer
 from PyQt6.QtGui import QColor, QPainter, QIcon
 import sys
 import os
 import threading
+import time
 
 from colors import colors
-from Components.customWidgets import MatrixDisplay,ColorCard
+from Components.customWidgets import MatrixDisplay,ColorCard,FrameDisplayScroller
 
 def resource_path(relative_path):
     try:base_path = sys._MEIPASS
@@ -18,23 +19,32 @@ class AnimationEditor(QWidget):
     def __init__(self,controller):
         super().__init__()
         self.controller = controller
-        self.layout = QHBoxLayout(self)
+        self.layout = QVBoxLayout(self)
         self.selectedColor = QColor("#FF99FF")
         self.selectedColorIndex = 0
+        self.selectedFrameIndex = 0
+        self.speed = 100
+        self.playTimer = QTimer(self)
+        self.playTimer.timeout.connect(self.nextFrame)
+
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setObjectName("animationPanel")
 
         self.animationObject = {
             "palette":[QColor("black"),QColor("red"),QColor("green"),QColor("blue"),QColor("yellow"),QColor("magenta"),QColor("cyan"),QColor("white"),QColor("#FF9911"),QColor("#00FF88")],
-            "frames":[]
+            "frames":[[[0 for a in range(8)] for b in range(8)]]
         }
+
+        self.topWidget = QWidget()
+        self.topWidgetLayout = QHBoxLayout(self.topWidget)
+        self.layout.addWidget(self.topWidget)
 
         # Left side
 
         self.leftSide = QWidget()
         self.leftSideLayout = QVBoxLayout(self.leftSide)
-        self.layout.addWidget(self.leftSide)
+        self.topWidgetLayout.addWidget(self.leftSide)
 
         self.colorRow = QWidget()
         self.colorRowLayout = QHBoxLayout(self.colorRow)
@@ -68,6 +78,7 @@ class AnimationEditor(QWidget):
         self.fillButton.clicked.connect(self.handleMatrixFill)
         self.leftSideLayout.setAlignment(self.fillButton,Qt.AlignmentFlag.AlignTop)
 
+
         self.colorRack = QWidget()
         self.colorRack.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.colorRack.setObjectName("colorRack")
@@ -93,12 +104,57 @@ class AnimationEditor(QWidget):
 
         self.rightSide = QWidget()
         self.rightSideLayout = QVBoxLayout(self.rightSide)
-        self.layout.addWidget(self.rightSide)
+        self.topWidgetLayout.addWidget(self.rightSide)
 
         self.preview = MatrixDisplay()
         self.preview.callback = self.handlePreviewCallback
         self.preview.resizeMatrix(8,8)
         self.rightSideLayout.addWidget(self.preview)
+
+        # Carousel
+        self.animationCarousel = FrameDisplayScroller(self.animationObject,maxFrames=20)
+        self.animationCarousel.buttonGroup.idClicked.connect(self.handleFrameSelection)
+        self.layout.addWidget(self.animationCarousel)
+        self.layout.setAlignment(self.animationCarousel,Qt.AlignmentFlag.AlignBottom)
+        
+        self.actionsWidget = QWidget()
+        self.actionLayout = QHBoxLayout(self.actionsWidget)
+        self.layout.addWidget(self.actionsWidget)
+        
+        self.frameLabel = QLabel(text=f"{self.selectedFrameIndex+1}/{len(self.animationObject["frames"])}")
+        self.frameLabel.setFixedWidth(60)
+        self.actionLayout.addWidget(self.frameLabel)
+
+        self.playButton = QPushButton(text="Play")
+        self.playButton.setCheckable(True)
+        self.playButton.setChecked(False)
+        self.playButton.clicked.connect(self.playPause)
+        self.actionLayout.addWidget(self.playButton)
+        
+        self.newBlankButton = QPushButton(text="New blank")
+        self.newBlankButton.clicked.connect(self.addBlank)
+        self.actionLayout.addWidget(self.newBlankButton)
+
+        self.newDuplicate = QPushButton(text="New duplicate")
+        self.newDuplicate.clicked.connect(self.addDuplicate)
+        self.actionLayout.addWidget(self.newDuplicate)
+
+        self.deleteFrame = QPushButton(text="Delete")
+        self.deleteFrame.setObjectName("deleteButton")
+        self.deleteFrame.clicked.connect(self.handleDeleteFrame)
+        self.actionLayout.addWidget(self.deleteFrame)
+
+        self.actionLayout.addStretch()
+
+        self.playOnDevice = QPushButton(text="Play on device")
+        self.playOnDevice.setCheckable(True)
+        self.playOnDevice.setChecked(False)
+        self.playOnDevice.clicked.connect(self.handlePlayOnDevice)
+        self.actionLayout.addWidget(self.playOnDevice)
+
+        self.sendButton = QPushButton(text="Send")
+        self.sendButton.clicked.connect(self.sendToDevice)
+        self.actionLayout.addWidget(self.sendButton)
 
         self.setStyleSheet(f"""
             *{{
@@ -134,6 +190,14 @@ class AnimationEditor(QWidget):
                 background-color:{colors['bg-dark']};
                 border: 1px solid {colors['border']};
             }}
+            FrameDisplayScroller{{
+                background-color:{colors['bg-dark']};
+                border: 1px solid {colors['border']};
+                border-radius:10px;
+            }}
+            #deleteButton{{
+                background-color:{colors['danger']}
+            }}
         """)
 
     def handlePickerSelection(self):
@@ -143,11 +207,8 @@ class AnimationEditor(QWidget):
             self.preview.setCursor(Qt.CursorShape.ArrowCursor)
 
     def handleMatrixFill(self):
-        self.preview.pixelGrid = [[self.selectedColor for a in range(len(self.preview.pixelGrid[0]))] for b in range(len(self.preview.pixelGrid))]
-        self.preview.update()
-        rgb = self.selectedColor.getRgb()
-        self.controller.setColor(rgb[0],rgb[1],rgb[2])
-        self.controller.fillWithColor()
+        self.animationObject["frames"][self.selectedFrameIndex] = [[self.selectedColorIndex for x in range(len(self.animationObject["frames"][self.selectedFrameIndex][0]))] for y in range(len(self.animationObject["frames"][self.selectedFrameIndex]))]
+        self.loadFrameToPreview(self.selectedFrameIndex)
 
     def handlePreviewCallback(self,x,y):
         if self.pickerModeButton.isChecked():
@@ -159,11 +220,10 @@ class AnimationEditor(QWidget):
             """)
             self.pickerModeButton.setChecked(False)
             self.preview.setCursor(Qt.CursorShape.ArrowCursor)
+            self.loadFrameToPreview(self.selectedFrameIndex)
         else:
-            self.preview.pixelGrid[y][x] = self.selectedColor
-            self.preview.update()
-            rgb = self.selectedColor.getRgb()
-            self.controller.setPixel(x,y,rgb[0],rgb[1],rgb[2])
+            self.animationObject["frames"][self.selectedFrameIndex][y][x] = self.selectedColorIndex
+            self.loadFrameToPreview(self.selectedFrameIndex)
 
     def handleOpenColorDialog(self):
         self.selectedColor=self.colorDialog.getColor(self.selectedColor)
@@ -172,7 +232,8 @@ class AnimationEditor(QWidget):
             *{{background-color:rgba{self.selectedColor.getRgb()}}}
         """)
         self.cards[self.selectedColorIndex].updateColor(self.selectedColor)
-    
+        self.loadFrameToPreview(self.selectedFrameIndex)
+
     def handlePaletteSelection(self):
         self.selectedColorIndex = int(self.colorRackButtonGroup.checkedButton().textData)-1
         self.selectedColor = self.animationObject["palette"][self.selectedColorIndex]
@@ -185,9 +246,59 @@ class AnimationEditor(QWidget):
         QcolorFrame = [[self.animationObject["palette"][frame[b][a]] for a in range(len(frame[0]))] for b in range(len(frame))]
         self.preview.pixelGrid = QcolorFrame
         self.preview.update()
+        self.animationCarousel.cards[index].setChecked(True)
+        self.animationCarousel.updateDisplay(self.animationObject)
+        self.frameLabel.setText(f"{self.selectedFrameIndex+1}/{len(self.animationObject["frames"])}")
 
     def resizeMatrix(self,w,h):
         self.preview.resizeMatrix(w,h)
         self.animationObject["frames"] = [[]]
         self.animationObject["frames"][0] = [[0 for x in range(w)] for y in range(h)]
+        self.selectedFrameIndex = 0
+        self.animationCarousel.updateDisplay(self.animationObject)
+        self.loadFrameToPreview(0)
 
+    def addBlank(self):
+        if len(self.animationObject["frames"]) < 20:
+            self.animationObject["frames"].append([[0 for a in range(len(self.animationObject["frames"][0][0]))] for b in range(len(self.animationObject["frames"][0]))])
+            self.selectedFrameIndex = len(self.animationObject["frames"])-1
+            self.loadFrameToPreview(self.selectedFrameIndex)
+
+    def addDuplicate(self):
+        if len(self.animationObject["frames"]) < 20:
+            self.animationObject["frames"].append([[self.animationObject["frames"][self.selectedFrameIndex][b][a] for a in range(len(self.animationObject["frames"][0][0]))] for b in range(len(self.animationObject["frames"][0]))])
+            self.selectedFrameIndex = len(self.animationObject["frames"])-1
+            self.loadFrameToPreview(self.selectedFrameIndex)
+
+    def handleFrameSelection(self):     
+        self.selectedFrameIndex = self.animationCarousel.buttonGroup.checkedButton().number
+        self.loadFrameToPreview(self.selectedFrameIndex)
+    
+    def handleDeleteFrame(self):
+        if len(self.animationObject["frames"]) > 1:
+            self.animationObject["frames"].pop(self.selectedFrameIndex)
+            self.selectedFrameIndex = min(self.selectedFrameIndex,len(self.animationObject["frames"])-1)
+            self.loadFrameToPreview(self.selectedFrameIndex)
+    
+    def playPause(self):
+        if self.playButton.isChecked():
+            self.selectedFrameIndex = 0
+            self.playButton.setText("Stop")
+            self.playTimer.start(self.speed)
+        else:
+            self.playButton.setText("Play")
+            self.playTimer.stop()
+            self.loadFrameToPreview(self.selectedFrameIndex)
+        
+    def nextFrame(self):
+        self.loadFrameToPreview(self.selectedFrameIndex)
+        self.selectedFrameIndex += 1
+        if self.selectedFrameIndex >= len(self.animationObject["frames"]):
+            self.selectedFrameIndex = 0
+    
+    def handlePlayOnDevice(self):
+        self.controller.play()
+
+    def sendToDevice(self):
+        threading.Thread(target=lambda aO=self.animationObject:self.controller.sendAnimation(aO),daemon=True).start()
+        

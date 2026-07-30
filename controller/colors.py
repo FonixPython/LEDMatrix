@@ -9,8 +9,8 @@ colors = {
     "border-muted":"#402712",
     "primary":"#E0A26F",
     "secondary":"#73BAEA",
-    "danger":"#BC938C",
-    "warning":"#A5A07C",
-    "success":"#84A894",
-    "info":"#8D9FBE"
+    "danger":"#FF383C",
+    "warning":"#FF8D28",
+    "success":"#34C759",
+    "info":"#6155F5"
 }

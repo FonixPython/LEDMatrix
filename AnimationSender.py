@@ -25,7 +25,7 @@ def pixelToNibleArray(text):
         result.append(packed)
     return result
 
-"""
+
 send("gd")
 size = ser.read_until().decode('utf-8').strip()
 print(size)
@@ -53,7 +53,7 @@ for i in range(len(data["frames"])):
 
 
 send("ap")
-"""
+
 
 while True:
     send(input("Type in command:"))
