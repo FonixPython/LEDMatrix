@@ -1,14 +1,14 @@
-from PyQt6.QtWidgets import QLabel,QWidget, QHBoxLayout, QPushButton, QButtonGroup
+from PyQt6.QtWidgets import QLabel,QWidget, QHBoxLayout,QVBoxLayout, QPushButton, QButtonGroup
 from PyQt6.QtCore import Qt, QRectF
 from PyQt6.QtGui import QColor, QPainter, QBrush
 from colors import colors
 
 
 class SegmentedButton(QWidget):
-    def __init__(self,values,default_index=0):
+    def __init__(self,values,orientation="horizontal",default_index=0):
         super().__init__()
         self.values = values
-        self.layout = QHBoxLayout(self)
+        self.layout = QHBoxLayout(self) if orientation == "horizontal" else QVBoxLayout(self)
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(2,2,2,2)
 

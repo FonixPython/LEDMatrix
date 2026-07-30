@@ -4,6 +4,7 @@ from Components.TopBar import TopBar
 from Components.BasicsPanel import BasicsPanel
 
 from Components.SingleFrame import SingleFrameEditor
+from Components.Pattern import PatternEditor
 
 from colors import colors
 
@@ -20,7 +21,7 @@ class App(QWidget):
         self.mainLayout.setAlignment(self.topBar, Qt.AlignmentFlag.AlignTop)
         
 
-        self.basicsPanel = BasicsPanel(controller=self.controller)
+        self.basicsPanel = BasicsPanel(controller=self.controller,changeModeCallback=self.onModeChange)
         self.mainLayout.addWidget(self.basicsPanel)
         self.mainLayout.setAlignment(self.basicsPanel, Qt.AlignmentFlag.AlignTop)
         
@@ -33,9 +34,9 @@ class App(QWidget):
         self.singleFramePanel.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         self.modeStackedWidget.addWidget(self.singleFramePanel)
         
-        self.modeStackedWidget.setCurrentWidget(self.singleFramePanel)
+        self.patternPanel = PatternEditor(controller=self.controller)
+        self.modeStackedWidget.addWidget(self.patternPanel)
         
-        self.mainLayout.addStretch()
 
         self.setStyleSheet(f"""
             *{{
@@ -47,3 +48,5 @@ class App(QWidget):
         """)
     def onConnection(self,x,y):
         self.singleFramePanel.resizeMatrix(x,y)
+    def onModeChange(self,modeIndex):
+        self.modeStackedWidget.setCurrentIndex(modeIndex)
