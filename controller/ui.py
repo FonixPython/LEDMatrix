@@ -6,7 +6,7 @@ from Components.BasicsPanel import BasicsPanel
 from Components.SingleFrame import SingleFrameEditor
 from Components.Pattern import PatternEditor
 from Components.Text import TextEditor
-
+from Components.Animation import AnimationEditor
 
 from colors import colors
 
@@ -38,10 +38,14 @@ class App(QWidget):
         
         self.patternPanel = PatternEditor(controller=self.controller)
         self.modeStackedWidget.addWidget(self.patternPanel)
-        
+
+        self.animationPanel = AnimationEditor(controller=self.controller)
+        self.modeStackedWidget.addWidget(self.animationPanel)
+
         self.textPanel = TextEditor(controller=self.controller)
         self.modeStackedWidget.addWidget(self.textPanel)
-        
+
+        self.modeStackedWidget.setCurrentIndex(2)
 
         self.setStyleSheet(f"""
             *{{
@@ -53,5 +57,6 @@ class App(QWidget):
         """)
     def onConnection(self,x,y):
         self.singleFramePanel.resizeMatrix(x,y)
+        self.animationPanel.resizeMatrix(x,y)
     def onModeChange(self,modeIndex):
         self.modeStackedWidget.setCurrentIndex(modeIndex)

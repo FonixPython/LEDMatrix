@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QLabel,QWidget, QHBoxLayout,QVBoxLayout, QPushButton, QButtonGroup
+from PyQt6.QtWidgets import QLabel,QWidget, QHBoxLayout,QVBoxLayout,QAbstractButton, QPushButton, QButtonGroup
 from PyQt6.QtCore import Qt, QRectF
 from PyQt6.QtGui import QColor, QPainter, QBrush
 from colors import colors
@@ -114,3 +114,41 @@ class MatrixDisplay(QWidget):
 
     def mouseReleaseEvent(self,event):
         self.painting = False
+
+class ColorCard(QPushButton):
+    def __init__(self,text,color):
+        super().__init__()
+        self.color = color
+        self.textData = text
+        self.setCheckable(True)
+        self.setFixedHeight(60)
+        self.layout = QHBoxLayout(self)
+        self.layout.setContentsMargins(0,0,0,0)
+
+        self.layout.addWidget(QLabel(text))
+        
+        self.preview = QWidget()
+        self.preview.setFixedSize(350,60)
+        self.preview.setStyleSheet(f"""
+            background: rgba{self.color.getRgb()};
+            border-radius: 10px;
+        """)
+        self.layout.addWidget(self.preview)
+
+        self.toggled.connect(self.updateStyle)
+        self.updateStyle(False)
+
+    def updateStyle(self, checked):
+        if checked:self.setProperty("selected", True)
+        else:self.setProperty("selected", False)
+        self.style().unpolish(self)
+        self.style().polish(self)
+    
+    def updateColor(self,color):
+        self.color = color
+        self.preview.setStyleSheet(f"""
+            background: rgba{self.color.getRgb()};
+            border-radius: 10px;
+        """)
+
+
