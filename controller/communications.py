@@ -1,6 +1,9 @@
 import serial
 import serial.tools.list_ports
 import time
+import threading
+import queue
+
 
 BAUD_RATE = 9600
 
@@ -17,6 +20,20 @@ class ControllerAPI():
         self.text = "Hello_world"
         self.textColorMode = "Solid"
         self.effectColor = [255, 128, 0]
+        self.serialQueue = queue.Queue()
+        self.senderThread = threading.Thread(
+            target=self.queueSendingTask,
+            daemon=True
+        )
+        self.serialLock = threading.Lock()
+        self.senderThread.start()
+    def queueSendingTask(self):
+        while True:
+            data = self.serialQueue.get()
+            if self.serialSocket:
+                self._send(data)
+                print(f"Sent: '{data}'")
+                self.serialSocket.read_until()
     def getDevices(self):
         portList = serial.tools.list_ports.comports()
         portsObject = [{"name":i.name,"device":i.device,"product":i.product} for i in portList]
@@ -30,8 +47,8 @@ class ControllerAPI():
             }
         }
     def connect(self,comport:str):
-        self.serialSocket = serial.Serial(comport,BAUD_RATE)
-        time.sleep(5)
+        self.serialSocket = serial.Serial(comport,BAUD_RATE,timeout=5)
+        self.serialSocket.read_until()
         self._send("gd")
         response = self.serialSocket.read_until().decode('utf-8').strip()
         self.xDimension = int(response.split("x")[0])
@@ -52,7 +69,8 @@ class ControllerAPI():
         if not self.serialSocket: raise ConnectionError("Device not connected!")
     def _send(self,data):
         self.checkConnection()
-        self.serialSocket.write((data + "\n").encode())
+        with self.serialLock:
+            self.serialSocket.write((data+"\n").encode())
     def setMode(self,mode:str):
         modeIndex = 0
         match mode:
@@ -61,7 +79,7 @@ class ControllerAPI():
             case "Animation": modeIndex = 2
             case "Text": modeIndex = 3
             case _: raise ValueError("Invalid mode!")
-        self._send(f"sm {modeIndex}")
+        self.serialQueue.put(f"sm {modeIndex}")
         self.mode = mode
     def setPattern(self,mode:str):
         modeIndex = 0
@@ -73,30 +91,30 @@ class ControllerAPI():
             case "Snake": modeIndex = 4
             case "Rainbow fill": modeIndex = 5
             case _: raise ValueError("Invalid pattern!")
-        self._send(f"em {modeIndex}")
+        self.serialQueue.put(f"em {modeIndex}")
         self.pattern = mode
     def setColor(self,r:int,g:int,b:int):
         if r not in range(256) or g not in range(256) or b not in range(256): raise ValueError("A channel is out of the accepted range of 0-255!")
-        self._send(f"ec {r} {g} {b}")
+        self.serialQueue.put(f"ec {r} {g} {b}")
         self.effectColor = [r,g,b]
     def setBrightness(self,value:int):
         if not value in range(256): raise ValueError("Brightness value is out of range!")
-        self._send(f"sb {value}")
+        self.serialQueue.put(f"sb {value}")
         self.brightness = value
     def setSpeed(self,value:int):
         if value < 0: value = value * -1
-        self._send(f"ss {value}")
+        self.serialQueue.put(f"ss {value}")
         self.speed = value
     def fillWithColor(self):
-        self._send("f")
+        self.serialQueue.put("f")
     def setPixel(self,x:int,y:int,r:int,g:int,b:int):
         if r not in range(256) or g not in range(256) or b not in range(256): raise ValueError("A channel is out of the accepted range of 0-255!")
         if x not in range(self.xDimension) or y not in range(self.yDimension): raise ValueError("Invalid pixel address!")
-        self._send(f"o {x} {y} {r} {g} {b}")
+        self.serialQueue.put(f"o {x} {y} {r} {g} {b}")
     def setText(self,text:str):
         if len(text) >= 60: raise ValueError("Text too long!")
-        text.replace(" ","_")
-        self._send(f"ts {text}")
+        text = text.replace(" ","_")
+        self.serialQueue.put(f"ts {text}")
         self.text = text
     def setTextColor(self,mode:str):
         modeIndex = 0
@@ -104,7 +122,7 @@ class ControllerAPI():
             case "Solid": modeIndex = 0
             case "Rainbow": modeIndex = 1
             case _: raise ValueError("Invalid color mode!")
-        self._send("tc")
+        self.serialQueue.put(f"tc {modeIndex}")
         self.textColorMode = mode
 
 

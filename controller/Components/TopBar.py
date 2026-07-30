@@ -13,8 +13,9 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 class TopBar(QWidget):
-    def __init__(self, controller):
+    def __init__(self, controller,connectionCallback=None):
         super().__init__()
+        self.connectionCallback = connectionCallback
         self.controller = controller
         self.layout = QHBoxLayout(self)
         self.setObjectName("topBar")
@@ -34,7 +35,7 @@ class TopBar(QWidget):
         refreshButton.clicked.connect(self.refreshOptions)
         self.selectorContainerLayout.addWidget(refreshButton)
 
-
+        
 
         self.comboBox = QComboBox()
         self.selectorContainerLayout.addWidget(self.comboBox)
@@ -124,3 +125,4 @@ class TopBar(QWidget):
                 self.stateLabel.setText("Connected")
                 self.sizeLabel.setText(f"{result['dimensions']['x']}x{result['dimensions']['y']}")
                 self.connectButton.setText("Disconnect")
+                self.connectionCallback(result['dimensions']['x'],result['dimensions']['y'])

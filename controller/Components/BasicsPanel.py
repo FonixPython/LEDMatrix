@@ -59,6 +59,7 @@ class BasicsPanel(QWidget):
 
 
         self.modeContainer = QWidget()
+        self.modeContainer.setObjectName("modeContainer")
         self.modeContainerLayout = QHBoxLayout(self.modeContainer)
         self.layout.addWidget(self.modeContainer)
 
@@ -127,6 +128,9 @@ class BasicsPanel(QWidget):
             SegmentedButton QPushButton:checked{{
                 background-color:{colors['primary']};
             }}
+            #modeContainer{{
+                background-color:{colors['bg-dark']};
+            }}
         """)
 
     def speedSliderChange(self):
@@ -139,3 +143,4 @@ class BasicsPanel(QWidget):
         self.controller.setBrightness(self.brightnessSlider.value())
     def speedSliderLetGo(self):
         self.controller.setSpeed(self.speedSlider.value())
+    

@@ -324,6 +324,7 @@ void setup() {
     Serial.begin(9600);
     FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
     playBootAnimation();
+    Serial.println("k");
 }
 
 uint8_t getPixelInAnimationBuffer(uint8_t frame, uint8_t index) {
@@ -473,15 +474,18 @@ void parseSerialInput(){
                     nextFrameDelay = ia;
                     break;
             }
+            Serial.println("k");
             break;
         case 'f':
             fill_solid(leds, NUM_LEDS, effectColor);
+            Serial.println("k");
             break;
         case 'o':{
             if (ia >= 0 && ia < X && ib >= 0 && ib < Y) {
                 int address = coordinatesToLedAddress(ia,ib);
                 leds[address] = CRGB(ic,id,ie);
             }
+            Serial.println("k");
             break;
         }
         case 'e':
@@ -494,6 +498,7 @@ void parseSerialInput(){
                     effectColor = CRGB(ia,ib,ic);
                     break;
             }
+            Serial.println("k");
             break;
         case 'a':
             switch (cmd[1]){
@@ -520,6 +525,7 @@ void parseSerialInput(){
                     palette[ia] = CRGB(ib,ic,id);
                     break;
             }
+            Serial.println("k");
             break;
         case 't':
             switch(cmd[1]){
@@ -530,6 +536,7 @@ void parseSerialInput(){
                     textColor = ia;
                     break;
             }
+            Serial.println("k");
             break;
         case 'g':
             switch(cmd[1]){

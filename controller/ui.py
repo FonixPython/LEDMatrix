@@ -1,7 +1,9 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout
+from PyQt6.QtWidgets import QWidget, QVBoxLayout,QStackedWidget,QSizePolicy
 from PyQt6.QtCore import Qt
 from Components.TopBar import TopBar
 from Components.BasicsPanel import BasicsPanel
+
+from Components.SingleFrame import SingleFrameEditor
 
 from colors import colors
 
@@ -13,7 +15,7 @@ class App(QWidget):
         
         self.mainLayout = QVBoxLayout(self)
 
-        self.topBar = TopBar(controller=self.controller)
+        self.topBar = TopBar(controller=self.controller,connectionCallback=self.onConnection)
         self.mainLayout.addWidget(self.topBar)
         self.mainLayout.setAlignment(self.topBar, Qt.AlignmentFlag.AlignTop)
         
@@ -21,6 +23,17 @@ class App(QWidget):
         self.basicsPanel = BasicsPanel(controller=self.controller)
         self.mainLayout.addWidget(self.basicsPanel)
         self.mainLayout.setAlignment(self.basicsPanel, Qt.AlignmentFlag.AlignTop)
+        
+        self.modeStackedWidget = QStackedWidget()
+        self.modeStackedWidget.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        self.mainLayout.addWidget(self.modeStackedWidget)
+        
+
+        self.singleFramePanel = SingleFrameEditor(controller=self.controller)
+        self.singleFramePanel.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        self.modeStackedWidget.addWidget(self.singleFramePanel)
+        
+        self.modeStackedWidget.setCurrentWidget(self.singleFramePanel)
         
         self.mainLayout.addStretch()
 
@@ -32,4 +45,5 @@ class App(QWidget):
                 background-color:{colors["bg-dark"]}
             }}
         """)
-
+    def onConnection(self,x,y):
+        self.singleFramePanel.resizeMatrix(x,y)
