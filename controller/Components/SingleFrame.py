@@ -1,13 +1,13 @@
-from PyQt6.QtWidgets import QLabel,QWidget,QVBoxLayout, QHBoxLayout, QPushButton, QButtonGroup, QColorDialog,QFileDialog, QLineEdit
-from PyQt6.QtCore import Qt, QRectF
-from PyQt6.QtGui import QColor, QPainter, QIcon
+from PyQt6.QtWidgets import QLabel,QWidget,QVBoxLayout, QHBoxLayout, QPushButton, QColorDialog, QFileDialog, QLineEdit
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor, QIcon
 import sys
 import os
-import threading
 import json
 
 from colors import colors
 from Components.customWidgets import MatrixDisplay
+from Components.error import showError
 
 def resource_path(relative_path):
     try:base_path = sys._MEIPASS
@@ -85,16 +85,19 @@ class SingleFrameEditor(QWidget):
         self.loadButton = QPushButton(text="Load from file")
         self.loadButton.clicked.connect(self.loadFromFile)
         self.fileOperationsWidgetLayout.addWidget(self.loadButton)
-
+        
         self.controlsLayout.addStretch()
+
+        self.sendButton = QPushButton(text="Send")
+        self.sendButton.clicked.connect(self.send)
+        self.controlsLayout.addWidget(self.sendButton)
+
 
 
         self.preview = MatrixDisplay()
         self.preview.callback = self.handlePreviewCallback
         self.preview.resizeMatrix(8,8)
         self.layout.addWidget(self.preview)
-        
-        
         
         self.setStyleSheet(f"""
             *{{
@@ -134,7 +137,7 @@ class SingleFrameEditor(QWidget):
                 font-size:24px;
             }}
             #fileOperations{{
-                background-color: {colors['bg-light']};
+                background-color: {colors['bg-dark']};
                 margin:0;
                 padding:2px;
                 border: 1px solid {colors['border']};
@@ -148,69 +151,87 @@ class SingleFrameEditor(QWidget):
             self.preview.setCursor(Qt.CursorShape.ArrowCursor)
     
     def handlePreviewCallback(self,x,y):
-        if self.pickerModeButton.isChecked():
-            self.selectedColor = self.preview.pixelGrid[y][x]
-            self.colorDisplay.setStyleSheet(f"""
-                *{{background-color:rgba{self.selectedColor.getRgb()}}}
-            """)
-            self.pickerModeButton.setChecked(False)
-            self.preview.setCursor(Qt.CursorShape.ArrowCursor)
-        else:
-            self.preview.pixelGrid[y][x] = self.selectedColor
-            self.preview.update()
-            rgb = self.selectedColor.getRgb()
-            self.controller.setPixel(x,y,rgb[0],rgb[1],rgb[2])
+        try:
+            if self.pickerModeButton.isChecked():
+                self.selectedColor = self.preview.pixelGrid[y][x]
+                self.colorDisplay.setStyleSheet(f"""
+                    *{{background-color:rgba{self.selectedColor.getRgb()}}}
+                """)
+                self.pickerModeButton.setChecked(False)
+                self.preview.setCursor(Qt.CursorShape.ArrowCursor)
+            else:
+                self.preview.pixelGrid[y][x] = self.selectedColor
+                self.preview.update()
+                rgb = self.selectedColor.getRgb()
+                self.controller.setPixel(x,y,rgb[0],rgb[1],rgb[2])
+        except Exception as e:
+            showError(self,str(e))
+    
     def handleMatrixFill(self):
         self.preview.pixelGrid = [[self.selectedColor for a in range(len(self.preview.pixelGrid[0]))] for b in range(len(self.preview.pixelGrid))]
         self.preview.update()
         rgb = self.selectedColor.getRgb()
         self.controller.setColor(rgb[0],rgb[1],rgb[2])
         self.controller.fillWithColor()
+    
     def handleOpenColorDialog(self):
         self.selectedColor=self.colorDialog.getColor(self.selectedColor)
         self.colorDisplay.setStyleSheet(f"""
             *{{background-color:rgba{self.selectedColor.getRgb()}}}
         """)
+    
     def resizeMatrix(self,w,h):
         self.preview.resizeMatrix(w,h)
     
-    def loadFromFile(self):
-        with open("config.json","r") as f: config = json.load(f)
-        filenameDialog = QFileDialog(filter=".json")
-        filename = filenameDialog.getOpenFileName(self,"Load matrix",config["savePath"])
-        with open(filename[0],"r") as f: data=json.load(f)
-        if data.get("type") != "single": raise ValueError("Invalid json file, file doens't contain a single frame!")
-        self.frameNameEntry.setText(data.get("name","noname"))
-        self.selectedColor = QColor("black")
-        self.handleMatrixFill()
-        for y in range(min(len(self.preview.pixelGrid),data["gridHeight"])):
-            for x in range(min(len(self.preview.pixelGrid[0]),data["gridHeight"])):
-                self.selectedColor = QColor(data["frame"][y][x][0],data["frame"][y][x][1],data["frame"][y][x][2])
-                self.preview.pixelGrid[y][x] = self.selectedColor
-                self.preview.update()
-                self.controller.setPixel(x,y,data["frame"][y][x][0],data["frame"][y][x][1],data["frame"][y][x][2])
-        
-
-
-    def handleSaveToFile(self):
-        with open("config.json","r") as f: config = json.load(f)
-        filenameDialog = QFileDialog(filter=".json")
-        filename = filenameDialog.getSaveFileName(self,"Save matrix",os.path.join(config["savePath"],f"{self.frameNameEntry.text()}.json"))
-        filename = filename[0]
-        
-        colorFrame=[[(0,0,0) for i in range(len(self.preview.pixelGrid[0]))] for y in range(len(self.preview.pixelGrid))]
-
+    def send(self):
         for y in range(len(self.preview.pixelGrid)):
             for x in range(len(self.preview.pixelGrid[0])):
-                qcolorObject = self.preview.pixelGrid[y][x]
-                colorTouple = qcolorObject.getRgb()
-                colorFrame[y][x] = (colorTouple[0],colorTouple[1],colorTouple[2])
-        data = {
-            "name":self.frameNameEntry.text(),
-            "type":"single",
-            "gridWidth":len(self.preview.pixelGrid[0]),
-            "gridHeight":len(self.preview.pixelGrid),
-            "frame":colorFrame
-        }
-        with open(filename,"w") as f:
-            json.dump(data,f,indent=4)
+                rgb = self.preview.pixelGrid[y][x].getRgb()
+                self.controller.setPixel(x,y,rgb[0],rgb[1],rgb[2])
+
+    def loadFromFile(self):
+        try:
+            with open("config.json","r") as f: config = json.load(f)
+            filenameDialog = QFileDialog(filter=".json")
+            filename = filenameDialog.getOpenFileName(self,"Load matrix",config["savePath"])
+            if not filename[0]: return
+            if not os.path.exists(filename[0]): raise FileNotFoundError("File doesn't seem to exist!")
+            with open(filename[0],"r") as f: data=json.load(f)
+            if data.get("type") != "single": raise ValueError("Invalid json file, file doens't contain a single frame!")
+            self.frameNameEntry.setText(data.get("name","noname"))
+            self.selectedColor = QColor("black")
+            self.handleMatrixFill()
+            for y in range(min(len(self.preview.pixelGrid),data["gridHeight"])):
+                for x in range(min(len(self.preview.pixelGrid[0]),data["gridHeight"])):
+                    self.selectedColor = QColor(data["frame"][y][x][0],data["frame"][y][x][1],data["frame"][y][x][2])
+                    self.preview.pixelGrid[y][x] = self.selectedColor
+                    self.preview.update()
+                    self.controller.setPixel(x,y,data["frame"][y][x][0],data["frame"][y][x][1],data["frame"][y][x][2])
+        except Exception as e:
+            showError(self,str(e))
+
+    def handleSaveToFile(self):
+        try:
+            with open("config.json","r") as f: config = json.load(f)
+            filenameDialog = QFileDialog(filter=".json")
+            filename = filenameDialog.getSaveFileName(self,"Save matrix",os.path.join(config["savePath"],f"{self.frameNameEntry.text()}.json"))
+            filename = filename[0]
+            if not filename: raise ValueError("can't save to empty filename!")
+            colorFrame=[[(0,0,0) for i in range(len(self.preview.pixelGrid[0]))] for y in range(len(self.preview.pixelGrid))]
+
+            for y in range(len(self.preview.pixelGrid)):
+                for x in range(len(self.preview.pixelGrid[0])):
+                    qcolorObject = self.preview.pixelGrid[y][x]
+                    colorTouple = qcolorObject.getRgb()
+                    colorFrame[y][x] = (colorTouple[0],colorTouple[1],colorTouple[2])
+            data = {
+                "name":self.frameNameEntry.text(),
+                "type":"single",
+                "gridWidth":len(self.preview.pixelGrid[0]),
+                "gridHeight":len(self.preview.pixelGrid),
+                "frame":colorFrame
+            }
+            with open(filename,"w") as f:
+                json.dump(data,f,indent=4)
+        except Exception as e:
+            showError(self,str(e))

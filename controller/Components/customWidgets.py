@@ -1,9 +1,8 @@
-from PyQt6.QtWidgets import QLabel,QWidget, QHBoxLayout,QVBoxLayout,QAbstractButton, QPushButton, QButtonGroup, QScrollArea
+from PyQt6.QtWidgets import QLabel,QWidget, QHBoxLayout,QVBoxLayout, QPushButton, QButtonGroup, QScrollArea
 from PyQt6.QtCore import Qt, QRectF
 from PyQt6.QtGui import QColor, QPainter, QBrush
 from colors import colors
-
-
+from Components.error import showError
 class SegmentedButton(QWidget):
     def __init__(self,values,orientation="horizontal",default_index=0):
         super().__init__()
@@ -39,11 +38,16 @@ class MatrixDisplay(QWidget):
         self.painting = False
         self.lastX = None
         self.lastY = None
+    
     def resizeMatrix(self,x,y):
-        self.x = x
-        self.y = y
-        self.pixelGrid = [[QColor("black") for a in range(self.x)] for b in range(self.y)]
-        self.update()
+        try:
+            self.x = x
+            self.y = y
+            self.pixelGrid = [[QColor("black") for a in range(self.x)] for b in range(self.y)]
+            self.update()
+        except Exception as e:
+            showError(self,e)
+    
     def paintEvent(self,event):
         padding = 5
         painter = QPainter(self)
@@ -216,6 +220,7 @@ class FrameDisplayScroller(QScrollArea):
         self.scrolledWidget.adjustSize()
         self.scrolledWidgetLayout.addStretch()
         self.updateDisplay(animationObject)
+        
     def updateDisplay(self,animationObject):
         for i,frame in enumerate(animationObject["frames"]):
             self.cards[i].updateFrame(frame=[[animationObject["palette"][frame[b][a]] for a in range(len(frame[0]))] for b in range(len(frame))])

@@ -18,16 +18,18 @@ class App(QWidget):
         
         self.mainLayout = QVBoxLayout(self)
 
-        self.topBar = TopBar(controller=self.controller,connectionCallback=self.onConnection)
+        self.topBar = TopBar(controller=self.controller,connectionCallback=self.onConnection,disconnectionCallback=self.onDissconnection)
         self.mainLayout.addWidget(self.topBar)
         self.mainLayout.setAlignment(self.topBar, Qt.AlignmentFlag.AlignTop)
 
 
         self.basicsPanel = BasicsPanel(controller=self.controller,changeModeCallback=self.onModeChange,speedCallback=self.onSpeedChange)
+        self.basicsPanel.setVisible(False)
         self.mainLayout.addWidget(self.basicsPanel)
         self.mainLayout.setAlignment(self.basicsPanel, Qt.AlignmentFlag.AlignTop)
-        
+
         self.modeStackedWidget = QStackedWidget()
+        self.modeStackedWidget.setVisible(False)
         self.modeStackedWidget.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         self.mainLayout.addWidget(self.modeStackedWidget)
         
@@ -53,11 +55,22 @@ class App(QWidget):
                 background-color:{colors["bg-dark"]}
             }}
         """)
+    
     def onConnection(self,x,y):
+        self.basicsPanel.setVisible(True)
+        self.modeStackedWidget.setVisible(True)
         self.singleFramePanel.resizeMatrix(x,y)
         self.animationPanel.resizeMatrix(x,y)
+    
+    def onDissconnection(self):
+        self.basicsPanel.setVisible(False)
+        self.modeStackedWidget.setVisible(False)
+        self.modeStackedWidget.setCurrentIndex(0)
+        
+
     def onModeChange(self,modeIndex):
         self.modeStackedWidget.setCurrentIndex(modeIndex)
+    
     def onSpeedChange(self,speed):
         self.animationPanel.speed = speed
         self.animationPanel.playTimer.setInterval(speed)

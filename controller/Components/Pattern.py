@@ -1,9 +1,6 @@
-from PyQt6.QtWidgets import QLabel,QWidget,QVBoxLayout, QHBoxLayout, QPushButton, QButtonGroup, QColorDialog
-from PyQt6.QtCore import Qt, QRectF
-from PyQt6.QtGui import QColor, QPainter, QIcon
-import sys
-import os
-import threading
+from PyQt6.QtWidgets import QLabel,QWidget,QVBoxLayout, QHBoxLayout, QPushButton, QColorDialog
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor
 
 from colors import colors
 from Components.customWidgets import SegmentedButton
@@ -113,4 +110,3 @@ class PatternEditor(QWidget):
     def handlePatternSelection(self):
         value = self.patternChooser.getValue()
         self.controller.setPattern(value)
-        

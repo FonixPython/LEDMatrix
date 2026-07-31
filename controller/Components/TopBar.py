@@ -1,11 +1,13 @@
-import sys
-import os
 from PyQt6.QtWidgets import QLabel,QWidget, QHBoxLayout, QLabel, QPushButton, QComboBox
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
+import sys
+import os
+import threading
 
 from colors import colors
 
+from Components.error import showError
 
 def resource_path(relative_path):
     try:base_path = sys._MEIPASS
@@ -13,9 +15,10 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 class TopBar(QWidget):
-    def __init__(self, controller,connectionCallback=None):
+    def __init__(self, controller,connectionCallback=None,disconnectionCallback=None):
         super().__init__()
         self.connectionCallback = connectionCallback
+        self.disconnectionCallback = disconnectionCallback
         self.controller = controller
         self.layout = QHBoxLayout(self)
         self.setObjectName("topBar")
@@ -111,18 +114,22 @@ class TopBar(QWidget):
         self.comboBox.clear()
         for i in devices:
             self.comboBox.addItem(f"{i['device']}")
-    
+
     def connectButtonAction(self):
-        if self.controller.getStatus()["connected"]:
-            self.connectButton.setText("Connect")
-            self.controller.disconnect()
-            self.stateLabel.setText("Disconnected")
-            self.sizeLabel.setText("")
-        else:
-            self.controller.connect(self.comboBox.currentText())
-            result = self.controller.getStatus()
-            if result["connected"]:
-                self.stateLabel.setText("Connected")
-                self.sizeLabel.setText(f"{result['dimensions']['x']}x{result['dimensions']['y']}")
-                self.connectButton.setText("Disconnect")
-                self.connectionCallback(result['dimensions']['x'],result['dimensions']['y'])
+        try:
+            if self.controller.getStatus()["connected"]:
+                self.connectButton.setText("Connect")
+                self.controller.disconnect()
+                self.stateLabel.setText("Disconnected")
+                self.sizeLabel.setText("")
+                if self.disconnectionCallback: self.disconnectionCallback()
+            else:
+                self.controller.connect(self.comboBox.currentText())
+                result = self.controller.getStatus()
+                if result["connected"]:
+                    self.stateLabel.setText("Connected")
+                    self.sizeLabel.setText(f"{result['dimensions']['x']}x{result['dimensions']['y']}")
+                    self.connectButton.setText("Disconnect")
+                    if self.connectionCallback: self.connectionCallback(result['dimensions']['x'],result['dimensions']['y'])
+        except Exception as e:
+            showError(self,message=str(e))

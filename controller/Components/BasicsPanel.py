@@ -1,6 +1,5 @@
 from PyQt6.QtWidgets import QLabel,QWidget, QHBoxLayout, QVBoxLayout, QSlider, QLabel
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon
 
 from Components.customWidgets import SegmentedButton
 from colors import colors
@@ -139,8 +138,10 @@ class BasicsPanel(QWidget):
         self.speedLabel.setText(f"{self.speedSlider.value()} ms")
         if self.speedCallback:
             self.speedCallback(int(self.speedSlider.value()))
+
     def brightnessSliderChanged(self):
         self.brightnessLabel.setText(f"{int(self.brightnessSlider.value()/255*100)}%")
+
     def modeChanged(self):
         value = self.modeSegmented.getValue()
         match value:
@@ -150,7 +151,9 @@ class BasicsPanel(QWidget):
             case "Text": modeIndex = 3
         self.controller.setMode(value)
         self.changeModeCallback(modeIndex)
+
     def brightnessSliderLetGo(self):
         self.controller.setBrightness(self.brightnessSlider.value())
+
     def speedSliderLetGo(self):
         self.controller.setSpeed(self.speedSlider.value())
