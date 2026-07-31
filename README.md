@@ -1,8 +1,15 @@
 <img width="1640" height="664" alt="banner" src="https://github.com/user-attachments/assets/bf34ca8a-1b8c-479c-929b-b80515a429bc" />
 
+# LED Matrix
 
 ## Features
 
+- Draw and display an array of full depth colors
+- Store/Load single full color depth frame in/from a json file
+- Display patterns generated at runtime with changeable speed
+- Draw and display animation with a 10 color palette, up to 20 frames woth adjustable speed
+- Store/Load animation in/from a json file
+- Display dynamically rendered text with a max length of 60 characters
 
 ## Demo
 
