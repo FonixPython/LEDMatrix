@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QLabel,QWidget, QHBoxLayout, QLabel, QPushButton, QComboBox
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QPixmap
 import sys
 import os
 import threading
@@ -23,10 +23,24 @@ class TopBar(QWidget):
         self.layout = QHBoxLayout(self)
         self.setObjectName("topBar")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        # App title ??
+
+        self.titleWidget = QWidget()
+        self.titleWidget.setFixedWidth(350)
+        self.titleWidgetLayout = QHBoxLayout(self.titleWidget)
+        self.layout.addWidget(self.titleWidget)
+        self.layout.setAlignment(self.titleWidget,Qt.AlignmentFlag.AlignLeft)
+
+        self.icon = QLabel()
+        self.icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.icon.setFixedSize(50,50)
+        self.iconPixmap = QPixmap(resource_path("icons/icon.png"))
+        self.iconPixmapScaled = self.iconPixmap.scaled(self.icon.size(),Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation)
+        self.icon.setPixmap(self.iconPixmapScaled)
+        self.titleWidgetLayout.addWidget(self.icon)
+
         title = QLabel(text="Matrix manager")
         title.setObjectName("title")
-        self.layout.addWidget(title)
+        self.titleWidgetLayout.addWidget(title)
 
         # Selector section
         self.selectorContainer = QWidget()
@@ -51,6 +65,8 @@ class TopBar(QWidget):
         self.stateDisplayContainerLayout = QHBoxLayout(self.stateDisplayContainer)
         self.layout.addWidget(self.stateDisplayContainer)
         self.layout.setAlignment(self.stateDisplayContainer,Qt.AlignmentFlag.AlignRight)
+
+
 
         self.sizeLabel = QLabel(text="")
         self.stateDisplayContainerLayout.addWidget(self.sizeLabel)
