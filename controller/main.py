@@ -23,7 +23,7 @@ if __name__ == "__main__":
     controllerInstance = ControllerAPI()
     app = QApplication(sys.argv)
     
-    QFontDatabase.addApplicationFont("fonts/PixelifySans.ttf")
+    QFontDatabase.addApplicationFont(resource_path("fonts/PixelifySans.ttf"))
     font = QFont("Pixelify Sans", 12)
     
     app.setFont(font)

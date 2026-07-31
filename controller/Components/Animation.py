@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QLabel,QWidget,QVBoxLayout, QHBoxLayout, QPushButton, QButtonGroup, QColorDialog,QFileDialog, QLineEdit
+from PyQt6.QtWidgets import QLabel,QWidget,QGridLayout,QVBoxLayout, QHBoxLayout, QPushButton, QButtonGroup, QColorDialog,QFileDialog, QLineEdit
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QColor, QIcon
 import sys
@@ -49,7 +49,7 @@ class AnimationEditor(QWidget):
         self.leftSide = QWidget()
         self.leftSideLayout = QVBoxLayout(self.leftSide)
         self.topWidgetLayout.addWidget(self.leftSide)
-
+        self.leftSide.setMaximumWidth(500)
 
 
         self.colorRow = QWidget()
@@ -86,9 +86,9 @@ class AnimationEditor(QWidget):
 
 
         self.colorRack = QWidget()
-        self.colorRack.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.colorRack.setObjectName("colorRack")
-        self.colorRackLayout = QVBoxLayout(self.colorRack)
+        self.colorRack.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.colorRackLayout = QGridLayout(self.colorRack)
         self.leftSideLayout.addWidget(self.colorRack)
 
         self.colorRackButtonGroup = QButtonGroup(self)
@@ -100,63 +100,57 @@ class AnimationEditor(QWidget):
             card = ColorCard(str(i+1),color=self.animationObject["palette"][i])
             if i == 0: card.setChecked(True)
             self.colorRackButtonGroup.addButton(card)
-            self.colorRackLayout.addWidget(card)
+            row = 0 if i <= 4 else 1
+            column = i if row == 0 else i-5
+            self.colorRackLayout.addWidget(card,row,column)
             self.cards.append(card)
 
         self.leftSideLayout.addStretch()
 
-
-        # Right side
-
-        self.rightSide = QWidget()
-        self.rightSideLayout = QVBoxLayout(self.rightSide)
-        self.topWidgetLayout.addWidget(self.rightSide)
-
-        self.preview = MatrixDisplay()
-        self.preview.callback = self.handlePreviewCallback
-        self.preview.resizeMatrix(8,8)
-        self.rightSideLayout.addWidget(self.preview)
-
         # Carousel
+
         self.animationCarousel = FrameDisplayScroller(self.animationObject,maxFrames=20)
+        self.animationCarousel.setMinimumHeight(130)
         self.animationCarousel.buttonGroup.idClicked.connect(self.handleFrameSelection)
-        self.layout.addWidget(self.animationCarousel)
-        self.layout.setAlignment(self.animationCarousel,Qt.AlignmentFlag.AlignBottom)
-        
-        self.actionsWidget = QWidget()
-        self.actionLayout = QHBoxLayout(self.actionsWidget)
-        self.layout.addWidget(self.actionsWidget)
+        self.leftSideLayout.addWidget(self.animationCarousel)
+        self.leftSideLayout.setAlignment(self.animationCarousel,Qt.AlignmentFlag.AlignBottom)
+
+        # Animation controls
+
+        self.animationControlWidget = QWidget()
+        self.animationControlWidgetLayout = QHBoxLayout(self.animationControlWidget)
+        self.leftSideLayout.addWidget(self.animationControlWidget)
         
         self.frameLabel = QLabel(text=f"{self.selectedFrameIndex+1}/{len(self.animationObject["frames"])}")
         self.frameLabel.setFixedWidth(60)
-        self.actionLayout.addWidget(self.frameLabel)
+        self.animationControlWidgetLayout.addWidget(self.frameLabel)
 
         self.playButton = QPushButton(text="Play")
         self.playButton.setCheckable(True)
         self.playButton.setChecked(False)
         self.playButton.clicked.connect(self.playPause)
-        self.actionLayout.addWidget(self.playButton)
+        self.animationControlWidgetLayout.addWidget(self.playButton)
         
         self.newBlankButton = QPushButton(text="New blank")
         self.newBlankButton.clicked.connect(self.addBlank)
-        self.actionLayout.addWidget(self.newBlankButton)
+        self.animationControlWidgetLayout.addWidget(self.newBlankButton)
 
         self.newDuplicate = QPushButton(text="New duplicate")
         self.newDuplicate.clicked.connect(self.addDuplicate)
-        self.actionLayout.addWidget(self.newDuplicate)
+        self.animationControlWidgetLayout.addWidget(self.newDuplicate)
 
         self.deleteFrame = QPushButton(text="Delete")
         self.deleteFrame.setObjectName("deleteButton")
         self.deleteFrame.clicked.connect(self.handleDeleteFrame)
-        self.actionLayout.addWidget(self.deleteFrame)
+        self.animationControlWidgetLayout.addWidget(self.deleteFrame)
 
-        self.actionLayout.addStretch()
+        # File operations
 
         self.fileOperationsWidget = QWidget()
         self.fileOperationsWidget.setObjectName("fileOperations")
         self.fileOperationsWidgetLayout = QHBoxLayout(self.fileOperationsWidget)
-        self.actionLayout.addWidget(self.fileOperationsWidget)
-        self.actionLayout.setAlignment(self.fileOperationsWidget,Qt.AlignmentFlag.AlignCenter)
+        self.leftSideLayout.addWidget(self.fileOperationsWidget)
+        self.leftSideLayout.setAlignment(self.fileOperationsWidget,Qt.AlignmentFlag.AlignBottom)
 
         self.frameNameEntry = QLineEdit()
         self.frameNameEntry.setMaximumWidth(350)
@@ -172,7 +166,11 @@ class AnimationEditor(QWidget):
         self.loadButton.clicked.connect(self.loadFromFile)
         self.fileOperationsWidgetLayout.addWidget(self.loadButton)
 
-        self.actionLayout.addStretch()
+        # Device interaction
+
+        self.actionsWidget = QWidget()
+        self.actionLayout = QHBoxLayout(self.actionsWidget)
+        self.leftSideLayout.addWidget(self.actionsWidget)
 
         self.playOnDevice = QPushButton(text="Play on device")
         self.playOnDevice.setCheckable(True)
@@ -183,6 +181,19 @@ class AnimationEditor(QWidget):
         self.sendButton = QPushButton(text="Send")
         self.sendButton.clicked.connect(self.sendToDevice)
         self.actionLayout.addWidget(self.sendButton)
+
+        # Right side
+
+        self.rightSide = QWidget()
+        self.rightSideLayout = QVBoxLayout(self.rightSide)
+        self.topWidgetLayout.addWidget(self.rightSide)
+
+        self.preview = MatrixDisplay()
+        self.preview.setMinimumWidth(500)
+        self.preview.callback = self.handlePreviewCallback
+        self.preview.resizeMatrix(8,8)
+        self.rightSideLayout.addWidget(self.preview)
+
 
         self.setStyleSheet(f"""
             *{{

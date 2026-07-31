@@ -122,19 +122,17 @@ class ColorCard(QPushButton):
         self.color = color
         self.textData = text
         self.setCheckable(True)
-        self.setFixedHeight(40)
-        self.layout = QHBoxLayout(self)
-        self.layout.setContentsMargins(0,0,0,0)
-
-        self.layout.addWidget(QLabel(text))
-        
+        self.setFixedSize(90,90)
+        self.layout = QVBoxLayout(self)
+        self.layout.setContentsMargins(5,5,5,5)
         self.preview = QWidget()
-        self.preview.setFixedSize(250,40)
+        self.preview.setFixedSize(80,80)
         self.preview.setStyleSheet(f"""
             background: rgba{self.color.getRgb()};
             border-radius: 10px;
         """)
         self.layout.addWidget(self.preview)
+        self.layout.setAlignment(self.preview,Qt.AlignmentFlag.AlignCenter)
 
         self.toggled.connect(self.updateStyle)
         self.updateStyle(False)
@@ -197,7 +195,7 @@ class FrameDisplayScroller(QScrollArea):
     def __init__(self,animationObject,maxFrames):
         super().__init__()
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.maxFrames = maxFrames
         self.scrolledWidget = QWidget()
@@ -228,3 +226,10 @@ class FrameDisplayScroller(QScrollArea):
         for i in range(len(animationObject["frames"]),self.maxFrames):
             self.cards[i].setVisible(False)
         self.scrolledWidget.adjustSize()
+
+    def wheelEvent(self, event):
+        delta = event.angleDelta().y()
+        if delta:
+            scrollbar = self.horizontalScrollBar()
+            scrollbar.setValue(scrollbar.value() - delta)
+        event.accept()
