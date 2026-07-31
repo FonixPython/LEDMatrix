@@ -70,7 +70,7 @@ class TopBar(QWidget):
                 padding:2px;
             }}
             #title{{
-                font-size:24px;
+                font-size:32px;
             }}
             QComboBox{{
                 width:100px;
