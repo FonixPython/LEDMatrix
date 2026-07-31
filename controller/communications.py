@@ -8,7 +8,7 @@ from Components.error import showError
 
 BAUD_RATE = 9600
 
-
+20.00
 class ControllerAPI():
     def __init__(self):
         self.serialSocket = None
