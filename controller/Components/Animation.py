@@ -1,10 +1,11 @@
-from PyQt6.QtWidgets import QLabel,QWidget,QVBoxLayout, QHBoxLayout, QPushButton, QButtonGroup, QColorDialog
+from PyQt6.QtWidgets import QLabel,QWidget,QVBoxLayout, QHBoxLayout, QPushButton, QButtonGroup, QColorDialog,QFileDialog, QLineEdit
 from PyQt6.QtCore import Qt, QRectF, QTimer
 from PyQt6.QtGui import QColor, QPainter, QIcon
 import sys
 import os
 import threading
 import time
+import json
 
 from colors import colors
 from Components.customWidgets import MatrixDisplay,ColorCard,FrameDisplayScroller
@@ -16,8 +17,9 @@ def resource_path(relative_path):
 
 
 class AnimationEditor(QWidget):
-    def __init__(self,controller):
+    def __init__(self,controller,basicsPanel):
         super().__init__()
+        self.basicsPanel = basicsPanel
         self.controller = controller
         self.layout = QVBoxLayout(self)
         self.selectedColor = QColor("#FF99FF")
@@ -35,6 +37,9 @@ class AnimationEditor(QWidget):
             "palette":[QColor("black"),QColor("red"),QColor("green"),QColor("blue"),QColor("yellow"),QColor("magenta"),QColor("cyan"),QColor("white"),QColor("#FF9911"),QColor("#00FF88")],
             "frames":[[[0 for a in range(8)] for b in range(8)]]
         }
+        self.panelTitle = QLabel(text="Animation Editor")
+        self.panelTitle.setObjectName("panelTitle")
+        self.layout.addWidget(self.panelTitle)
 
         self.topWidget = QWidget()
         self.topWidgetLayout = QHBoxLayout(self.topWidget)
@@ -45,6 +50,8 @@ class AnimationEditor(QWidget):
         self.leftSide = QWidget()
         self.leftSideLayout = QVBoxLayout(self.leftSide)
         self.topWidgetLayout.addWidget(self.leftSide)
+
+
 
         self.colorRow = QWidget()
         self.colorRowLayout = QHBoxLayout(self.colorRow)
@@ -146,6 +153,28 @@ class AnimationEditor(QWidget):
 
         self.actionLayout.addStretch()
 
+        self.fileOperationsWidget = QWidget()
+        self.fileOperationsWidget.setObjectName("fileOperations")
+        self.fileOperationsWidgetLayout = QHBoxLayout(self.fileOperationsWidget)
+        self.actionLayout.addWidget(self.fileOperationsWidget)
+        self.actionLayout.setAlignment(self.fileOperationsWidget,Qt.AlignmentFlag.AlignCenter)
+
+        self.frameNameEntry = QLineEdit()
+        self.frameNameEntry.setMaximumWidth(350)
+        self.frameNameEntry.setPlaceholderText("Image name")
+        self.frameNameEntry.setText("Matrix animation")
+        self.fileOperationsWidgetLayout.addWidget(self.frameNameEntry)
+
+        self.saveButton = QPushButton(text="Save")
+        self.saveButton.clicked.connect(self.handleSaveToFile)
+        self.fileOperationsWidgetLayout.addWidget(self.saveButton)
+        
+        self.loadButton = QPushButton(text="Load from file")
+        self.loadButton.clicked.connect(self.loadFromFile)
+        self.fileOperationsWidgetLayout.addWidget(self.loadButton)
+
+        self.actionLayout.addStretch()
+
         self.playOnDevice = QPushButton(text="Play on device")
         self.playOnDevice.setCheckable(True)
         self.playOnDevice.setChecked(False)
@@ -197,6 +226,19 @@ class AnimationEditor(QWidget):
             }}
             #deleteButton{{
                 background-color:{colors['danger']}
+            }}
+            #fileOperations{{
+                background-color: {colors['bg-light']};
+                margin:0;
+                padding:2px;
+                border: 1px solid {colors['border']};
+            }}
+            QLineEdit{{
+                border: 1px solid {colors['border']};
+                background-color:{colors['bg-light']}
+            }}
+            #panelTitle{{
+                font-size:24px;
             }}
         """)
 
@@ -301,4 +343,77 @@ class AnimationEditor(QWidget):
 
     def sendToDevice(self):
         threading.Thread(target=lambda aO=self.animationObject:self.controller.sendAnimation(aO),daemon=True).start()
+
+    def _coordinatesToAddress(self,x,y,originalDX):
+        x+=1;y+=1
+        address = originalDX*y
+        if y%2==0: address -= x
+        else: address-=originalDX-x+1
+        return address
+
+    def _oneDArrayToMatrix(self,oneD,originalDX,originalDY):
+        matrix = [[0 for a in range(originalDX)] for b in range(originalDY)]
+        for y in range(originalDY):
+            for x in range(originalDX):
+                matrix[y][x] = oneD[self._coordinatesToAddress(x,y,originalDX)]
+        return matrix
+    
+    def loadFromFile(self):
+        with open("config.json","r") as f: config = json.load(f)
+        filenameDialog = QFileDialog(filter=".json")
+        filename = filenameDialog.getOpenFileName(self,"Load matrix",config["savePath"])
+        with open(filename[0],"r") as f: data=json.load(f)
+        if data.get("type") != "animation" and not data.get("ratingSum"): raise ValueError("Invalid json file, file doens't contain an animation!")
+        self.frameNameEntry.setText(data.get("name","noname"))
+
+        self.basicsPanel.speedSlider.setValue(min(1000,data.get("delay")))
+        self.basicsPanel.speedSliderLetGo()
+
+        # Load frames
+        if data.get("frames"):
+            deviceX = len(self.animationObject["frames"][0][0])
+            deviceY = len(self.animationObject["frames"][0])
+            originalX = data.get("gridWidth")
+            originalY = data.get("gridHeight")
+            self.animationObject["frames"] = [[[0 for a in range(deviceX)] for b in range(deviceY)] for i in range(len(data.get("frames")))]
+            for i,frame in enumerate(data.get("frames")):
+                dataFrame = self._oneDArrayToMatrix(frame,originalX,originalY)
+                for y in range(min(deviceY,originalY)):
+                    for x in range(min(deviceX,originalX)):
+                        self.animationObject["frames"][i][y][x] = int(dataFrame[y][x])
+                        print(int(dataFrame[y][x]))
+        else:
+            raise ValueError("No frames in animation json!")
+
+        # Load palette
+        if data.get("palette"):
+            for i,color in enumerate(data.get("palette")):
+                self.animationObject["palette"][i] = QColor(color[0],color[1],color[2])
+        else:
+            self.animationObject["palette"] = [QColor("black"),QColor("red"),QColor("green"),QColor("blue"),QColor("yellow"),QColor("magenta"),QColor("cyan"),QColor("white"),QColor("#FF9911"),QColor("#00FF88")]
         
+        self.selectedColorIndex = 0
+        self.selectedFrameIndex = 0
+        for i, color in enumerate(self.animationObject["palette"]):
+            self.cards[i].updateColor(color)
+        self.loadFrameToPreview(self.selectedFrameIndex)
+        
+
+    def handleSaveToFile(self):
+        with open("config.json","r") as f: config = json.load(f)
+        filenameDialog = QFileDialog(filter=".json")
+        filename = filenameDialog.getSaveFileName(self,"Save matrix animation",os.path.join(config["savePath"],f"{self.frameNameEntry.text()}.json"))
+        filename = filename[0]
+        
+        data = {
+            "name":self.frameNameEntry.text(),
+            "delay":self.speed,
+            "type":"animation",
+            "gridWidth":len(self.preview.pixelGrid[0]),
+            "gridHeight":len(self.preview.pixelGrid),
+            "palette": [(i.getRgb()[0],i.getRgb()[1],i.getRgb()[2]) for i in self.animationObject["palette"]],
+            "frames": [self.controller._matrixToOneDimensionArray(i) for i in self.animationObject["frames"]]
+        }
+
+        with open(filename,"w") as f:
+            json.dump(data,f,indent=4)

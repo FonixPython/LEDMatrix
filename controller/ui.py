@@ -39,7 +39,7 @@ class App(QWidget):
         self.patternPanel = PatternEditor(controller=self.controller)
         self.modeStackedWidget.addWidget(self.patternPanel)
 
-        self.animationPanel = AnimationEditor(controller=self.controller)
+        self.animationPanel = AnimationEditor(controller=self.controller,basicsPanel=self.basicsPanel)
         self.modeStackedWidget.addWidget(self.animationPanel)
 
         self.textPanel = TextEditor(controller=self.controller)

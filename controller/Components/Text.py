@@ -14,6 +14,10 @@ class TextEditor(QWidget):
         self.setObjectName("textEditor")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
+        self.panelTitle = QLabel(text="Text Editor")
+        self.panelTitle.setObjectName("panelTitle")
+        self.layout.addWidget(self.panelTitle)
+
         self.textRow = QWidget()
         self.textRowLayout = QHBoxLayout(self.textRow)
         self.layout.addWidget(self.textRow)
@@ -114,6 +118,9 @@ class TextEditor(QWidget):
             }}
             #modeContainer{{
                 background-color:{colors['bg-dark']};
+            }}
+            #panelTitle{{
+                font-size:24px;
             }}
         """)
     

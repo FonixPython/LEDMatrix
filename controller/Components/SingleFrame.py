@@ -179,6 +179,7 @@ class SingleFrameEditor(QWidget):
         filenameDialog = QFileDialog(filter=".json")
         filename = filenameDialog.getOpenFileName(self,"Load matrix",config["savePath"])
         with open(filename[0],"r") as f: data=json.load(f)
+        if data.get("type") != "single": raise ValueError("Invalid json file, file doens't contain a single frame!")
         self.frameNameEntry.setText(data.get("name","noname"))
         self.selectedColor = QColor("black")
         self.handleMatrixFill()
@@ -194,8 +195,8 @@ class SingleFrameEditor(QWidget):
     def handleSaveToFile(self):
         with open("config.json","r") as f: config = json.load(f)
         filenameDialog = QFileDialog(filter=".json")
-        filename = filenameDialog.getSaveFileName(self,"Save matrix",os.path.join(config["savePath"],self.frameNameEntry.text()))
-        filename = filename[0].rstrip(".json")+".json"
+        filename = filenameDialog.getSaveFileName(self,"Save matrix",os.path.join(config["savePath"],f"{self.frameNameEntry.text()}.json"))
+        filename = filename[0]
         
         colorFrame=[[(0,0,0) for i in range(len(self.preview.pixelGrid[0]))] for y in range(len(self.preview.pixelGrid))]
 
@@ -206,6 +207,7 @@ class SingleFrameEditor(QWidget):
                 colorFrame[y][x] = (colorTouple[0],colorTouple[1],colorTouple[2])
         data = {
             "name":self.frameNameEntry.text(),
+            "type":"single",
             "gridWidth":len(self.preview.pixelGrid[0]),
             "gridHeight":len(self.preview.pixelGrid),
             "frame":colorFrame

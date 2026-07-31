@@ -11,8 +11,8 @@ BAUD_RATE = 9600
 class ControllerAPI():
     def __init__(self):
         self.serialSocket = None
-        self.xDimension = None
-        self.yDimension = None
+        self.xDimension = 8
+        self.yDimension = 8
         self.serialQueue = queue.Queue()
         self.senderThread = threading.Thread(
             target=self.queueSendingTask,

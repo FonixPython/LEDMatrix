@@ -17,6 +17,9 @@ class PatternEditor(QWidget):
         self.setObjectName("patternEditor")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         
+        self.panelTitle = QLabel(text="Pattern Editor")
+        self.panelTitle.setObjectName("panelTitle")
+        self.layout.addWidget(self.panelTitle)
 
         self.colorRow = QWidget()
         self.colorRowLayout = QHBoxLayout(self.colorRow)
@@ -93,6 +96,9 @@ class PatternEditor(QWidget):
             }}
             QPushButton:hover{{
                 background-color:{colors['border-muted']};
+            }}
+            #panelTitle{{
+                font-size:24px;
             }}
         """)
 
