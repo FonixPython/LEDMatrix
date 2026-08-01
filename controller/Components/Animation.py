@@ -250,6 +250,15 @@ class AnimationEditor(QWidget):
             #panelTitle{{
                 font-size:24px;
             }}
+            QFileDialog{{
+                    background-color:{colors["bg-light"]}
+            }}
+            QFileDialog *{{
+                background-color:{colors["bg-light"]}
+            }}
+            QFileDialog QToolButton{{
+                border: 1px solid {colors['border']};
+            }}
         """)
 
     def handlePickerSelection(self):

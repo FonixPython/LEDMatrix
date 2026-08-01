@@ -142,6 +142,15 @@ class SingleFrameEditor(QWidget):
                 padding:2px;
                 border: 1px solid {colors['border']};
             }}
+            QFileDialog{{
+                    background-color:{colors["bg-light"]}
+            }}
+            QFileDialog *{{
+                background-color:{colors["bg-light"]}
+            }}
+            QFileDialog QToolButton{{
+                border: 1px solid {colors['border']};
+            }}
         """)
     
     def handlePickerSelection(self):
